@@ -1,16 +1,21 @@
+import { ChatMessage } from "@twurple/chat";
+import Gdreqbot from "../core";
+
 class BaseCommand {
     config: Config;
 
     constructor({
         name = "",
         description = "Not specified",
-        args = [],
+        args = [] as string[],
         cooldown = 3,
         enabled = false,
         devOnly = false,
     }) {
         this.config = { name, description, args, cooldown, enabled, devOnly };
     }
+
+    async run(client: Gdreqbot, data: MsgData) {}
 }
 
 interface Config {
@@ -20,6 +25,13 @@ interface Config {
     cooldown?: number;
     enabled?: boolean;
     devOnly?: boolean;
+}
+
+export interface MsgData {
+    channel: string;
+    user: string;
+    text: string;
+    msg: ChatMessage;
 }
 
 export default BaseCommand;

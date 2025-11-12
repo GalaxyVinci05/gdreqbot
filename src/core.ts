@@ -1,34 +1,72 @@
-import { StaticAuthProvider } from "@twurple/auth";
-import { ChatClient } from "@twurple/chat";
+import { RefreshingAuthProvider } from "@twurple/auth";
+import { ChatClient, ChatClientOptions } from "@twurple/chat";
 import fs from "fs";
 import { config } from "dotenv";
-config();
+config({ quiet: true });
 
+import BaseCommand from "./structs/BaseCommand";
+import CommandLoader from "./modules/CommandLoader";
+import Logger from "./modules/Logger";
+
+const usrId = "1391218436";
+const prefix = process.env.PREFIX;
 const clientId = process.env.CLIENT_ID as string;
-const token = process.env.USER_TOKEN as string;
-const authProvider = new StaticAuthProvider(clientId, token);
+const clientSecret = process.env.SECRET as string;
 
-class gdreqbot extends ChatClient {
-    
+const tokenData = JSON.parse(fs.readFileSync(`./tokens.${usrId}.json`, "utf-8"));
+const authProvider = new RefreshingAuthProvider({
+    clientId,
+    clientSecret
+});
+
+authProvider.addUser(usrId, tokenData);
+authProvider.addIntentsToUser(usrId, ["chat"]);
+
+authProvider.onRefresh((userId, newTokenData) => {
+    fs.writeFileSync(`./tokens.${userId}.json`, JSON.stringify(newTokenData, null, 4), "utf-8");
+    new Logger().log("Refreshing token...");
+});
+
+class Gdreqbot extends ChatClient {
+    commands: Map<string, BaseCommand>;
+    cmdLoader: CommandLoader;
+    logger: Logger;
+
+    constructor(options: ChatClientOptions) {
+        super(options);
+
+        this.commands = new Map();
+        this.cmdLoader = new CommandLoader();
+        this.logger = new Logger();
+    }
 }
 
-const cmdFiles = fs.readdirSync("./dist/commands/").filter(f => f.endsWith(".js"));
-const evtFiles = fs.readdirSync("./dist/events/").filter(f => f.endsWith(".js"));
-
-const client = new ChatClient({
+const client = new Gdreqbot({
     authProvider,
     channels: ["galaxyvinci05"],
 });
-//const bot = new Bot({
-//    authProvider,
-//    channels: ["galaxyvinci05"],
-//    commands: [
-//        createBotCommand("shish", (params, { reply }) => {
-//            reply("shish");
-//        })
-//    ]
-//});
 
-client.onMessage((channel, user, text, msg) => {
-    
+const cmdFiles = fs.readdirSync("./dist/commands/").filter(f => f.endsWith(".js"));
+
+for (const file of cmdFiles) {
+    const res = client.cmdLoader.load(client, file);
+    if (res) client.logger.error(res);
+
+    delete require.cache[require.resolve(`./commands/${file}`)];
+}
+
+client.connect();
+client.onMessage(async (channel, user, text, msg) => {
+    if (!text.startsWith(prefix)) return;
+    let cmd = client.commands.get(text.slice(1));
+
+    if (!cmd) return;
+
+    try {
+        await cmd.run(client, { channel, user, text, msg });
+    } catch (e) {
+        console.log(e);
+    }
 });
+
+export default Gdreqbot;
