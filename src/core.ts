@@ -32,6 +32,7 @@ class Gdreqbot extends ChatClient {
     commands: Map<string, BaseCommand>;
     cmdLoader: CommandLoader;
     logger: Logger;
+    request: Request;
 
     constructor(options: ChatClientOptions) {
         super(options);
@@ -39,6 +40,7 @@ class Gdreqbot extends ChatClient {
         this.commands = new Map();
         this.cmdLoader = new CommandLoader();
         this.logger = new Logger();
+        this.request = new Request();
     }
 }
 
@@ -58,10 +60,6 @@ for (const file of cmdFiles) {
 
 client.connect();
 
-client.onConnect(async () => {
-    await new Request("").fetch();
-});
-
 client.onMessage(async (channel, user, text, msg) => {
     if (text.length >= 5) {
         let isId = true;
@@ -73,7 +71,8 @@ client.onMessage(async (channel, user, text, msg) => {
         }
 
         if (isId) {
-            // get level
+            let level = await client.request.fetch(text);
+            console.log(level);
         }
     }
 
