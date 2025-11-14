@@ -75,9 +75,13 @@ class Request {
 
     async removeLevel(client: Gdreqbot, id: string) {
         let levels: LevelData[] = client.db.get("levels");
-        if (!levels.length) return { status: ResCode.EMPTY };
+        if (!levels.length)
+            return { status: ResCode.EMPTY };
 
-        let idx = levels.findIndex(l => l.id == id);
+        let idx = levels.findIndex(l => l.id == id || l.name.toLowerCase() == id.toLowerCase());
+        if (idx == -1)
+            return { status: ResCode.NOT_FOUND };
+
         let level = levels.splice(idx, 1);
 
         try {

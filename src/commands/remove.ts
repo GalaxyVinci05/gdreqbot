@@ -17,7 +17,7 @@ export = class RemoveCommand extends BaseCommand {
         let levels: LevelData[] = client.db.get("levels");
         let id = "";
         if (msg.user == "galaxyvinci05" && args[0]) {
-            id = args[0];
+            id = args.join(" ");
         } else {
             let usrLvls = levels.filter(l => l.user == msg.user);
             if (!usrLvls?.length)
@@ -31,6 +31,11 @@ export = class RemoveCommand extends BaseCommand {
         switch (res.status) {
             case ResCode.EMPTY: {
                 client.say(channel, "Kappa The queue is empty.");
+                break;
+            }
+
+            case ResCode.NOT_FOUND: {
+                client.say(channel, "Kappa Couldn't find that level.");
                 break;
             }
 
