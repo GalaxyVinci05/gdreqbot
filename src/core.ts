@@ -1,13 +1,14 @@
 import { RefreshingAuthProvider } from "@twurple/auth";
 import { ChatClient, ChatClientOptions } from "@twurple/chat";
 import fs from "fs";
+import MapDB from "@galaxy05/map.db";
 import { config } from "dotenv";
 config({ quiet: true });
 
 import BaseCommand from "./structs/BaseCommand";
 import CommandLoader from "./modules/CommandLoader";
 import Logger from "./modules/Logger";
-import Request from "./modules/Request";
+import Request, { ResCode } from "./modules/Request";
 
 const usrId = "1391218436";
 const prefix = process.env.PREFIX;
@@ -32,7 +33,8 @@ class Gdreqbot extends ChatClient {
     commands: Map<string, BaseCommand>;
     cmdLoader: CommandLoader;
     logger: Logger;
-    request: Request;
+    db: MapDB;
+    req: Request;
 
     constructor(options: ChatClientOptions) {
         super(options);
@@ -40,7 +42,8 @@ class Gdreqbot extends ChatClient {
         this.commands = new Map();
         this.cmdLoader = new CommandLoader();
         this.logger = new Logger();
-        this.request = new Request();
+        this.db = new MapDB("data.db");
+        this.req = new Request(this.db);
     }
 }
 
@@ -71,20 +74,56 @@ client.onMessage(async (channel, user, text, msg) => {
         }
 
         if (isId) {
-            let level = await client.request.fetch(text);
-            console.log(level);
+            let res = await client.req.addLevel(client, text, user);
+            
+            switch (res.status) {
+                case ResCode.NOT_FOUND: {
+                    client.say(channel, "Kappa Couldn't find a level matching that ID.");
+                    break;
+                }
+
+                case ResCode.ALREADY_ADDED: {
+                    client.say(channel, "Kappa That level is already in the queue.");
+                    break;
+                }
+
+                case ResCode.MAX_PER_USER: {
+                    client.say(channel, "Kappa You have the max amount of levels in the queue (2)");
+                    break;
+                }
+
+                case ResCode.DISABLED: {
+                    client.say(channel, "Kappa Requests are disabled.");
+                    break;
+                }
+
+                case ResCode.ERROR: {
+                    client.say(channel, "An error occurred.");
+                    break;
+                }
+
+                case ResCode.OK: {
+                    client.say(channel, `PogChamp Added '${res.level.name}' by ${res.level.creator} to the queue at position ${client.db.get("levels").length}`);
+                    break;
+                }
+            }
         }
     }
 
     if (!text.startsWith(prefix)) return;
-    let cmd = client.commands.get(text.slice(1));
 
-    if (!cmd) return;
+    let args = text.slice(prefix.length).trim().split(/ +/);
+    let cmdName = args.shift().toLowerCase();
+    let cmd = client.commands.get(cmdName)
+        || client.commands.values().find(c => c.config.aliases?.includes(cmdName));
+
+    if (!cmd || !cmd.config.enabled || (cmd.config.devOnly && user != "galaxyvinci05")) return;
 
     try {
-        await cmd.run(client, { channel, user, text, msg });
+        await cmd.run(client, { channel, user, text, msg }, args);
     } catch (e) {
-        console.log(e);
+        client.say(channel, `An error occurred running command: ${cmd.config.name}`);
+        console.error(e);
     }
 });
 

@@ -1,5 +1,4 @@
 import Gdreqbot from "../core";
-import { ChatMessage } from "@twurple/chat";
 import BaseCommand, { MsgData } from "../structs/BaseCommand";
 
 export = class PingCommand extends BaseCommand {
@@ -11,7 +10,7 @@ export = class PingCommand extends BaseCommand {
         });
     }
 
-    async run(client: Gdreqbot, data: MsgData): Promise<any> {
-        await client.say(data.channel, "pong");
+    async run(client: Gdreqbot, msg: MsgData): Promise<any> {
+        await client.say(msg.channel, "pong");
     }
 }
