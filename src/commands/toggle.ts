@@ -1,7 +1,7 @@
 import Gdreqbot from "../core";
 import BaseCommand, { MsgData } from "../structs/BaseCommand";
 
-export = class PingCommand extends BaseCommand {
+export = class ToggleCommand extends BaseCommand {
     constructor() {
         super({
             name: "toggle",
@@ -13,7 +13,7 @@ export = class PingCommand extends BaseCommand {
     }
 
     async run(client: Gdreqbot, msg: MsgData): Promise<any> {
-        let toggle = client.req.toggle();
+        let toggle = await client.req.toggle(client);
         client.say(msg.channel, `Requests are now ${toggle ? "enabled" : "disabled"}.`);
     }
 }

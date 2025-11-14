@@ -2,7 +2,7 @@ import Gdreqbot from "../core";
 import { LevelData, ResCode } from "../modules/Request";
 import BaseCommand, { MsgData } from "../structs/BaseCommand";
 
-export = class PingCommand extends BaseCommand {
+export = class NextCommand extends BaseCommand {
     constructor() {
         super({
             name: "next",

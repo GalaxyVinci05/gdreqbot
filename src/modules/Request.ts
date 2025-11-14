@@ -10,14 +10,20 @@ class Request {
     //    this.query = query;
     //    this.type = type;
     //}
-    private enabled: boolean;
 
     constructor(db: MapDB) {
-        this.enabled = true;
-
         let levels: LevelData[] = db.get("levels");
         if (!levels?.length) {
             db.set("levels", []);
+        }
+
+        let sets: Settings = db.get("settings");
+        if (!sets) {
+            db.set("settings", {
+                req_enabled: true,
+                max_per_user: 2,
+                max_queue: -1
+            } as Settings);
         }
     }
 
@@ -31,7 +37,8 @@ class Request {
     }
 
     async addLevel(client: Gdreqbot, query: string, user: string) {
-        if (!this.enabled) return { status: ResCode.DISABLED };
+        let sets: Settings = client.db.get("settings");
+        if (!sets.req_enabled) return { status: ResCode.DISABLED };
 
         try {
             let res = await superagent
@@ -49,8 +56,12 @@ class Request {
             let newLvl = this.parseLevel(res.text, user);
             let levels: LevelData[] = client.db.get("levels");
 
-            if (levels.find(l => l.id == newLvl.id)) return { status: ResCode.ALREADY_ADDED };
-            else if (levels.filter(l => l.user == user).length >= 2) return { status: ResCode.MAX_PER_USER };
+            if (levels.find(l => l.id == newLvl.id))
+                return { status: ResCode.ALREADY_ADDED };
+            else if (sets.max_per_user != -1 && levels.filter(l => l.user == user).length >= sets.max_per_user)
+                return { status: ResCode.MAX_PER_USER };
+            else if (sets.max_queue != -1 && levels.length >= sets.max_queue)
+                return { status: ResCode.FULL };
 
             levels.push(newLvl);
             await client.db.set("levels", levels);
@@ -79,6 +90,15 @@ class Request {
         return { status: ResCode.OK, level };
     }
 
+    async clear(client: Gdreqbot) {
+        let levels: LevelData[] = client.db.get("levels");
+        if (!levels.length)
+            return { status: ResCode.EMPTY };
+        
+        await client.db.set("levels", []);
+        return { status: ResCode.OK };
+    }
+
     async next(client: Gdreqbot) {
         let levels: LevelData[] = client.db.get("levels");
         if (!levels.length)
@@ -99,9 +119,88 @@ class Request {
         return { status: ResCode.OK, level };
     }
 
-    toggle() {
-        this.enabled = !this.enabled;
-        return this.enabled;
+    list(client: Gdreqbot, page?: number) {
+        let levels: LevelData[] = client.db.get("levels");
+        if (!levels.length)
+            return { status: ResCode.EMPTY };
+
+        let pages = [];
+        let done = false;
+        let start = 0;
+        let end = levels.length >= 10 ? 10 : levels.length;
+        let pos = 0;
+
+        while (!done) {
+            let list = levels.slice(start, end);
+            if (!list.length) {
+                done = true;
+                break;
+            }
+
+            pages.push(list.map(l => {
+                pos++;
+                return {
+                    name: l.name,
+                    id: l.id,
+                    pos
+                }
+            }));
+
+            start += 10;
+            end += levels.length > start ? 10 : 0;
+
+            if (start > end) done = true;
+        }
+
+        if (page > pages.length)
+            return { status: ResCode.END };
+
+        return { status: ResCode.OK, page: pages[page ? page-1 : 0], pages: pages.length };
+    }
+
+    async toggle(client: Gdreqbot) {
+        let sets: Settings = client.db.get("settings");
+        sets.req_enabled = !sets.req_enabled;
+        await client.db.set("settings", sets);
+
+        return sets.req_enabled;
+    }
+
+    async set(client: Gdreqbot, key: string, value: string) {
+        let sets: Settings = client.db.get("settings");
+        
+        // ugly as hell ik
+        switch (key) {
+            case "req_enabled": {
+                if (value != "true" && value != "false")
+                    return { status: ResCode.INVALID_VALUE };
+
+                sets.req_enabled = (value == "true" ? true : false);
+                await client.db.set("settings", sets);
+                return { status: ResCode.OK };
+            }
+
+            case "max_per_user": {
+                if (isNaN(parseInt(value)))
+                    return { status: ResCode.INVALID_VALUE };
+
+                sets.max_per_user = parseInt(value);
+                await client.db.set("settings", sets);
+                return { status: ResCode.OK };
+            }
+
+            case "max_queue": {
+                if (isNaN(parseInt(value)))
+                    return { status: ResCode.INVALID_VALUE };
+
+                sets.max_queue = parseInt(value);
+                await client.db.set("settings", sets);
+                return { status: ResCode.OK };
+            }
+
+            default:
+                return { status: ResCode.INVALID_KEY };
+        }
     }
 }
 
@@ -114,6 +213,12 @@ export interface LevelData {
     user: string;
 }
 
+export interface Settings {
+    req_enabled?: boolean;
+    max_per_user?: number;
+    max_queue?: number;
+}
+
 export enum ResCode {
     OK,
     NOT_FOUND,
@@ -121,5 +226,9 @@ export enum ResCode {
     ALREADY_ADDED,
     DISABLED,
     EMPTY,
+    FULL,
+    INVALID_KEY,
+    INVALID_VALUE,
+    END,
     ERROR
 }

@@ -1,8 +1,8 @@
 import Gdreqbot from "../core";
 import BaseCommand, { MsgData } from "../structs/BaseCommand";
-import { ResCode } from "../modules/Request";
+import { ResCode, Settings } from "../modules/Request";
 
-export = class PingCommand extends BaseCommand {
+export = class ReqCommand extends BaseCommand {
     constructor() {
         super({
             name: "req",
@@ -15,11 +15,12 @@ export = class PingCommand extends BaseCommand {
 
     async run(client: Gdreqbot, msg: MsgData, args: string[]): Promise<any> {
         let { channel } = msg;
-        let res = await client.req.addLevel(client, args[0], msg.user);
+        let res = await client.req.addLevel(client, args.join(" "), msg.user);
+        let sets: Settings = client.db.get("settings");
 
         switch (res.status) {
             case ResCode.NOT_FOUND: {
-                client.say(channel, "Kappa Couldn't find a level matching that ID.");
+                client.say(channel, "Kappa Couldn't find a level matching that query (is it unlisted?)");
                 break;
             }
 
@@ -29,7 +30,12 @@ export = class PingCommand extends BaseCommand {
             }
 
             case ResCode.MAX_PER_USER: {
-                client.say(channel, "Kappa You have the max amount of levels in the queue (2)");
+                client.say(channel, `Kappa You have the max amount of levels in the queue (${sets.max_per_user})`);
+                break;
+            }
+
+            case ResCode.FULL: {
+                client.say(channel, `Kappa The queue is full (max ${sets.max_queue} levels)`);
                 break;
             }
 

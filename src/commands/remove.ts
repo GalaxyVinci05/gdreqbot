@@ -2,7 +2,7 @@ import Gdreqbot from "../core";
 import BaseCommand, { MsgData } from "../structs/BaseCommand";
 import { LevelData, ResCode } from "../modules/Request";
 
-export = class PingCommand extends BaseCommand {
+export = class RemoveCommand extends BaseCommand {
     constructor() {
         super({
             name: "remove",
@@ -20,6 +20,9 @@ export = class PingCommand extends BaseCommand {
             id = args[0];
         } else {
             let usrLvls = levels.filter(l => l.user == msg.user);
+            if (!usrLvls?.length)
+                return client.say(channel, "Kappa You don't have any levels in the queue.");
+
             id = usrLvls[usrLvls.length - 1].id;
         }
 
