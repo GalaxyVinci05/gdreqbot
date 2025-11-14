@@ -15,6 +15,9 @@ export = class ReqCommand extends BaseCommand {
 
     async run(client: Gdreqbot, msg: MsgData, args: string[]): Promise<any> {
         let { channel } = msg;
+        if (!args.length)
+            return client.say(channel, "Kappa You need to specify a query.");
+
         let res = await client.req.addLevel(client, args.join(" "), msg.user);
         let sets: Settings = client.db.get("settings");
 
