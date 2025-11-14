@@ -6,8 +6,8 @@ export = class ReqCommand extends BaseCommand {
     constructor() {
         super({
             name: "req",
-            description: "Request a level by ID",
-            args: "<levelID>",
+            description: "Request a level by name or ID",
+            args: "<query>",
             aliases: ["r", "request"],
             enabled: true
         });
