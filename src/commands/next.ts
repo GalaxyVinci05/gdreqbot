@@ -1,5 +1,5 @@
 import Gdreqbot from "../core";
-import { LevelData } from "../modules/Request";
+import { LevelData, ResCode } from "../modules/Request";
 import BaseCommand, { MsgData } from "../structs/BaseCommand";
 
 export = class PingCommand extends BaseCommand {
@@ -14,14 +14,24 @@ export = class PingCommand extends BaseCommand {
     }
 
     async run(client: Gdreqbot, msg: MsgData): Promise<any> {
-        let data: LevelData[] = client.db.get("levels");
-        if (!data.length) return client.say(msg.channel, "Kappa The queue is empty.");
+        let { channel } = msg;
+        let res = await client.req.next(client);
 
-        data.shift();
-        await client.db.set("levels", data);
+        switch (res.status) {
+            case ResCode.EMPTY: {
+                client.say(channel, "Kappa The queue is empty.");
+                break;
+            }
 
-        let level: LevelData = client.db.get("levels")[0];
-        if (!level) return client.say(msg.channel, "Kappa The queue is empty.")
-        client.say(msg.channel, `PogChamp Next level: '${level.name}' (${level.id}) by ${level.creator}`);
+            case ResCode.ERROR: {
+                client.say(channel, "An error occurred.");
+                break;
+            }
+
+            case ResCode.OK: {
+                client.say(msg.channel, `PogChamp Next level: '${res.level.name}' (${res.level.id}) by ${res.level.creator}`);
+                break;
+            }
+        }
     }
 }

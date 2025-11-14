@@ -15,8 +15,8 @@ class Request {
     constructor(db: MapDB) {
         this.enabled = true;
 
-        let data: LevelData[] = db.get("levels");
-        if (!data?.length) {
+        let levels: LevelData[] = db.get("levels");
+        if (!levels?.length) {
             db.set("levels", []);
         }
     }
@@ -46,20 +46,57 @@ class Request {
             console.log(res.text);
             if (res.text == "-1") return { status: ResCode.NOT_FOUND };
 
-            let level = this.parseLevel(res.text, user);
-            let data: LevelData[] = client.db.get("levels");
+            let newLvl = this.parseLevel(res.text, user);
+            let levels: LevelData[] = client.db.get("levels");
 
-            if (data.find(l => l.id == level.id)) return { status: ResCode.ALREADY_ADDED };
-            else if (data.filter(l => l.user == user).length >= 2) return { status: ResCode.MAX_PER_USER };
+            if (levels.find(l => l.id == newLvl.id)) return { status: ResCode.ALREADY_ADDED };
+            else if (levels.filter(l => l.user == user).length >= 2) return { status: ResCode.MAX_PER_USER };
 
-            data.push(level);
-            await client.db.set("levels", data);
+            levels.push(newLvl);
+            await client.db.set("levels", levels);
 
-            return { status: ResCode.OK, level };
+            return { status: ResCode.OK, level: newLvl };
         } catch (e) {
             console.error(e);
             return { status: ResCode.ERROR };
         }
+    }
+
+    async removeLevel(client: Gdreqbot, id: string) {
+        let levels: LevelData[] = client.db.get("levels");
+        if (!levels.length) return { status: ResCode.EMPTY };
+
+        let idx = levels.findIndex(l => l.id == id);
+        let level = levels.splice(idx, 1);
+
+        try {
+            await client.db.set("levels", levels);
+        } catch (e) {
+            console.error(e);
+            return { status: ResCode.ERROR };
+        }
+
+        return { status: ResCode.OK, level };
+    }
+
+    async next(client: Gdreqbot) {
+        let levels: LevelData[] = client.db.get("levels");
+        if (!levels.length)
+            return { status: ResCode.EMPTY };
+
+        try {
+            levels.shift();
+            await client.db.set("levels", levels);
+        } catch (e) {
+            console.error(e);
+            return { status: ResCode.ERROR };
+        }
+
+        let level: LevelData = client.db.get("levels")[0];
+        if (!level)
+            return { status: ResCode.EMPTY };
+
+        return { status: ResCode.OK, level };
     }
 
     toggle() {
@@ -83,5 +120,6 @@ export enum ResCode {
     MAX_PER_USER,
     ALREADY_ADDED,
     DISABLED,
+    EMPTY,
     ERROR
 }
