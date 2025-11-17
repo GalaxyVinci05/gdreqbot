@@ -1,6 +1,7 @@
 import MapDB from "@galaxy05/map.db";
 import Gdreqbot from "../core";
 import superagent from "superagent";
+import Database from "./Database";
 
 class Request {
     //query: string;
@@ -11,7 +12,7 @@ class Request {
     //    this.type = type;
     //}
 
-    constructor(db: MapDB) {
+    constructor(db: Database) {
         let levels: LevelData[] = db.get("levels");
         if (!levels?.length) {
             db.set("levels", []);
@@ -229,19 +230,6 @@ class Request {
 }
 
 export default Request;
-
-export interface LevelData {
-    name: string;
-    creator: string;
-    id: string;
-    user: string;
-}
-
-export interface Settings {
-    req_enabled?: boolean;
-    max_per_user?: number;
-    max_queue?: number;
-}
 
 export enum ResCode {
     OK,

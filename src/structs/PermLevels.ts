@@ -1,4 +1,5 @@
 enum PermLevels {
+    BLACKLISTED,
     USER,
     SUB,
     VIP,

@@ -1,0 +1,60 @@
+import { ChatMessage } from "@twurple/chat";
+import Gdreqbot from "../core";
+import BaseCommand from "../structs/BaseCommand";
+import PermLevels from "../structs/PermLevels";
+
+export = class PermCommand extends BaseCommand {
+    constructor() {
+        super({
+            name: "perm",
+            description: "View your permission level",
+            privilegeDesc: "Set required perms for a command",
+            privilegeArgs: "set|reset <command> [<perm>]",
+            aliases: ["permission", "permissions"],
+            enabled: true,
+            permLevel: PermLevels.BLACKLISTED,
+            supportsPrivilege: true
+        });
+    }
+
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], userPerms: PermLevels, privilegeMode: boolean): Promise<any> {
+        if (!privilegeMode)
+            return client.say(channel, `Your permission level is: ${PermLevels[userPerms]}`, { replyTo: msg });
+
+        if (!args.length || (!["set", "reset"].includes(args[0]))) return client.say(channel, "You must select a valid action (set|reset)", { replyTo: msg });
+        if (!args[1]) return client.say(channel, "You must select a command.", { replyTo: msg });
+        let cmd = client.commands.get(args[1])
+            || client.commands.values().find(c => c.config.aliases?.includes(args[1]));
+
+        if (!cmd) return client.say(channel, "That command doesn't exist.", { replyTo: msg });
+        else if (cmd.config.permLevel > userPerms) return client.say(channel, "You can't manage commands that require a permission higher than yours.", { replyTo: msg });
+
+        switch (args[0]) {
+            case "set": {
+                if (!args[2]) return client.say(channel, `You must select a permission to apply: ${Object.keys(PermLevels).join("|")}`);
+
+                let perm = args[2].toUpperCase();
+                if (!Object.keys(PermLevels).includes(perm)) return client.say(channel, `Invalid permission, please select one of: ${Object.keys(PermLevels).join("|")}`);
+
+                let value: PermLevels = (PermLevels as any)[perm];
+                if (value > userPerms) return client.say(channel, "You can't set a permission higher than yours.", { replyTo: msg });
+
+                client.customPerms.set(cmd.config.name, value);
+                await client.db.set("perms", client.customPerms);
+                client.say(channel, `Set permission for ${client.config.prefix}${cmd.config.name} to: ${perm}`, { replyTo: msg });
+                break;
+            }
+
+            case "reset": {
+                console.log(client.customPerms);
+                if (client.customPerms.get(cmd.config.name)) {
+                    client.customPerms.delete(cmd.config.name);
+                    await client.db.set("perms", client.customPerms);
+                }
+
+                client.say(channel, `Reset ${client.config.prefix}${cmd.config.name} to its default permission (${PermLevels[cmd.config.permLevel]})`, { replyTo: msg });
+                break;
+            }
+        }
+    }
+}

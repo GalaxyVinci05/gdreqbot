@@ -1,13 +1,13 @@
 import { RefreshingAuthProvider } from "@twurple/auth";
 import { ChatClient, ChatClientOptions } from "@twurple/chat";
 import fs, { unlink } from "fs";
-import MapDB from "@galaxy05/map.db";
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
 import BaseCommand from "./structs/BaseCommand";
 import CommandLoader from "./modules/CommandLoader";
 import Logger from "./modules/Logger";
+import Database from "./modules/Database";
 import Request, { ResCode } from "./modules/Request";
 import config from "./config";
 import PermLevels from "./structs/PermLevels";
@@ -30,7 +30,7 @@ class Gdreqbot extends ChatClient {
     commands: Map<string, BaseCommand>;
     cmdLoader: CommandLoader;
     logger: Logger;
-    db: MapDB;
+    db: Database;
     req: Request;
     config: typeof config;
 
@@ -40,7 +40,7 @@ class Gdreqbot extends ChatClient {
         this.commands = new Map();
         this.cmdLoader = new CommandLoader();
         this.logger = new Logger();
-        this.db = new MapDB("data.db");
+        this.db = new Database("data.db");
         this.req = new Request(this.db);
         this.config = config;
     }
@@ -81,7 +81,8 @@ client.onMessage(async (channel, user, text, msg) => {
     else if (msg.userInfo.isMod) userPerms = PermLevels.MOD;
     else if (msg.userInfo.isVip) userPerms = PermLevels.VIP;
     else if (msg.userInfo.isSubscriber) userPerms = PermLevels.SUB;
-    else userPerms = PermLevels.USER;
+    else if (!client.blacklist.includes(msg.userInfo.userId)) userPerms = PermLevels.USER;
+    else userPerms = PermLevels.BLACKLISTED;
 
     let isId = text.match(/\b\d{5,9}\b/);
 
