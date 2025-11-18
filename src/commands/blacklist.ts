@@ -18,7 +18,7 @@ export = class BlacklistCommand extends BaseCommand {
         });
     }
 
-    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], userPerms: PermLevels): Promise<any> {
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[]): Promise<any> {
         let blacklist: Blacklist = client.db.load("blacklist", { channelId: msg.channelId });
 
         if (!args.length || (!["add", "remove", "clear"].includes(args[0]))) return client.say(channel, "You must select a valid action (add|remove|clear)", { replyTo: msg });
