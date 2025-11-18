@@ -11,7 +11,7 @@ export = class BlacklistCommand extends BaseCommand {
         super({
             name: "blacklist",
             description: "Manage blacklisted users (prevented from using the bot)",
-            args: "add|remove|clear [<user>]",
+            args: "add|remove|list|clear [<user>]",
             aliases: ["bl"],
             enabled: true,
             permLevel: PermLevels.MOD
@@ -21,8 +21,8 @@ export = class BlacklistCommand extends BaseCommand {
     async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[]): Promise<any> {
         let blacklist: Blacklist = client.db.load("blacklist", { channelId: msg.channelId });
 
-        if (!args.length || (!["add", "remove", "clear"].includes(args[0]))) return client.say(channel, "You must select a valid action (add|remove|clear)", { replyTo: msg });
-        if (!args[1] && args[0] != "clear") return client.say(channel, "You must specify a user.", { replyTo: msg });
+        if (!args.length || (!["add", "remove", "clear", "list"].includes(args[0]))) return client.say(channel, "You must select a valid action (add|remove|list|clear)", { replyTo: msg });
+        if (!args[1] && (!["clear", "list"].includes(args[0]))) return client.say(channel, "You must specify a user.", { replyTo: msg });
 
         switch (args[0]) {
             case "add": {
@@ -67,6 +67,44 @@ export = class BlacklistCommand extends BaseCommand {
                 await client.db.save("blacklist", { channelId: msg.channelId }, { users: [] });
 
                 client.say(channel, "Cleared the blacklist.", { replyTo: msg });
+                break;
+            }
+
+            case "list": {
+                let page = parseInt(args[1]);
+                if (args[1] && isNaN(page))
+                    return client.say(channel, "Kappa Sir that's not a number.", { replyTo: msg });
+
+                if (!blacklist.users.length) return client.say(channel, "The blacklist is empty.", { replyTo: msg });
+
+                let pages = [];
+                let done = false;
+                let start = 0;
+                let end = blacklist.users.length >= 10 ? 10 : blacklist.users.length;
+                let pos = 0;
+
+                while (!done) {
+                    let list = blacklist.users.slice(start, end);
+                    if (!list.length) {
+                        done = true;
+                        break;
+                    }
+
+                    pages.push(list.map(l => {
+                        pos++;
+                        return l.userName;
+                    }));
+
+                    start += 10;
+                    end += blacklist.users.length > start ? 10 : 0;
+
+                    if (start > end) done = true;
+                }
+
+                if (page > pages.length)
+                    return client.say(channel, "Kappa There aren't that many pages.", { replyTo: msg });
+
+                client.say(channel, `Page ${page || "1"} of ${pages.length} (${blacklist.users.length} users) | ${pages[page ? page-1 : 0].join(", ")}`, { replyTo: msg });
                 break;
             }
         }
