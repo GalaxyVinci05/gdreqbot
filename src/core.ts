@@ -101,7 +101,7 @@ client.onMessage(async (channel, user, text, msg) => {
             
         switch (res.status) {
             case ResCode.NOT_FOUND: {
-                client.say(channel, "Kappa Couldn't find a level matching that ID.", { replyTo: msg });
+                client.say(channel, "Kappa Couldn't find a level matching that ID (is it unlisted?)", { replyTo: msg });
                 break;
             }
 
