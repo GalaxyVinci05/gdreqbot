@@ -9,7 +9,8 @@ export = class NextCommand extends BaseCommand {
         super({
             name: "next",
             description: "Shifts the queue",
-            aliases: ["n"],
+            category: "requests",
+            aliases: ["n", "skip"],
             enabled: true,
             permLevel: PermLevels.MOD
         });

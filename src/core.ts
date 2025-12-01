@@ -2,6 +2,7 @@ import { RefreshingAuthProvider } from "@twurple/auth";
 import { ChatClient, ChatClientOptions } from "@twurple/chat";
 import fs, { unlink } from "fs";
 import { Server } from "http";
+import MapDB from "@galaxy05/map.db";
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
@@ -16,6 +17,7 @@ import { Blacklist } from "./datasets/blacklist";
 import { Levels } from "./datasets/levels";
 import { Perm } from "./datasets/perms";
 import Dashboard from "./server";
+import { User } from "./structs/user";
 
 const tokenData = JSON.parse(fs.readFileSync(`./tokens.${config.botId}.json`, "utf-8"));
 const authProvider = new RefreshingAuthProvider({
@@ -52,9 +54,19 @@ class Gdreqbot extends ChatClient {
     }
 }
 
+// ugliest workaround ever
+let channels: User[] = [];
+export const channelsdb = new MapDB("channels.db");
+
+if (channelsdb.get("channels")) {
+    channels = channelsdb.get("channels");
+} else {
+    channelsdb.set("channels", []).then(() => console.log("channels db setup"));
+}
+
 const client = new Gdreqbot({
     authProvider,
-    channels: ["galaxyvinci05"]
+    channels: channels.map(c => c.userName)
 });
 
 const cmdFiles = fs.readdirSync("./dist/commands/").filter(f => f.endsWith(".js"));
@@ -83,8 +95,6 @@ client.onConnect(async () => {
 });
 
 client.onMessage(async (channel, user, text, msg) => {
-    await client.db.setDefault({ channelId: msg.channelId, channelName: channel });
-
     let userPerms: PermLevels;
     let blacklist: Blacklist = client.db.load("blacklist", { channelId: msg.channelId });
     let levels: Levels = client.db.load("levels", { channelId: msg.channelId });
@@ -124,7 +134,7 @@ client.onMessage(async (channel, user, text, msg) => {
             }
 
             case ResCode.ERROR: {
-                client.say(channel, "An error occurred.", { replyTo: msg });
+                client.say(channel, "An error occurred. If the issue persists, please contact the developer.", { replyTo: msg });
                 break;
             }
 
@@ -151,7 +161,7 @@ client.onMessage(async (channel, user, text, msg) => {
     try {
         await cmd.run(client, msg, channel, args, userPerms);
     } catch (e) {
-        client.say(channel, `An error occurred running command: ${cmd.config.name}`, { replyTo: msg });
+        client.say(channel, `An error occurred running command: ${cmd.config.name}. If the issue persists, please contact the developer.`, { replyTo: msg });
         console.error(e);
     }
 });

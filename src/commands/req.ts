@@ -9,6 +9,7 @@ export = class ReqCommand extends BaseCommand {
         super({
             name: "req",
             description: "Request a level by name or ID",
+            category: "requests",
             args: "<query>",
             aliases: ["r", "request", "add"],
             enabled: true
@@ -34,12 +35,12 @@ export = class ReqCommand extends BaseCommand {
             }
 
             case ResCode.MAX_PER_USER: {
-                client.say(channel, `Kappa You have the max amount of levels in the queue (${sets.max_per_user})`, { replyTo: msg });
+                client.say(channel, `Kappa You have the max amount of levels in the queue (${sets.max_levels_per_user})`, { replyTo: msg });
                 break;
             }
 
             case ResCode.FULL: {
-                client.say(channel, `Kappa The queue is full (max ${sets.max_queue} levels)`, { replyTo: msg });
+                client.say(channel, `Kappa The queue is full (max ${sets.max_queue_size} levels)`, { replyTo: msg });
                 break;
             }
 
@@ -49,7 +50,7 @@ export = class ReqCommand extends BaseCommand {
             }
 
             case ResCode.ERROR: {
-                client.say(channel, "An error occurred.", { replyTo: msg });
+                client.say(channel, "An error occurred. If the issue persists, please contact the developer.", { replyTo: msg });
                 break;
             }
 

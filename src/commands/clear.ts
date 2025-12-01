@@ -9,6 +9,7 @@ export = class ClearCommand extends BaseCommand {
         super({
             name: "clear",
             description: "Clear the queue",
+            category: "requests",
             aliases: ["purge"],
             enabled: true,
             permLevel: PermLevels.MOD

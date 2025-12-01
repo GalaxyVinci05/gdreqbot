@@ -10,6 +10,7 @@ export = class RemoveCommand extends BaseCommand {
         super({
             name: "remove",
             description: "Remove your last level from the queue",
+            category: "requests",
             privilegeDesc: "Remove the last level from the queue, or a specific one",
             privilegeArgs: "[<query>]",
             aliases: ["rm", "oops"],
@@ -26,7 +27,7 @@ export = class RemoveCommand extends BaseCommand {
                 query = args.join(" ");
             else query = levels[levels.length-1]?.id;
         } else {
-            let usrLvls = levels.filter(l => l.user.userName == msg.userInfo.userName); //todo: change to userId
+            let usrLvls = levels.filter(l => l.user.userId == msg.userInfo.userId);
             if (!usrLvls?.length)
                 return client.say(channel, "Kappa You don't have any levels in the queue.", { replyTo: msg });
 
@@ -47,7 +48,7 @@ export = class RemoveCommand extends BaseCommand {
             }
 
             case ResCode.ERROR: {
-                client.say(channel, "An error occurred.", { replyTo: msg });
+                client.say(channel, "An error occurred. If the issue persists, please contact the developer.", { replyTo: msg });
                 break;
             }
 

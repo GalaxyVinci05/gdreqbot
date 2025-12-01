@@ -8,6 +8,7 @@ class BaseCommand {
     constructor({
         name = "",
         description = "Not specified",
+        category = "others",
         privilegeDesc = "Not specified",
         args = "",
         privilegeArgs = "",
@@ -17,7 +18,7 @@ class BaseCommand {
         permLevel = PermLevels.USER,
         supportsPrivilege = false
     }) {
-        this.config = { name, description, privilegeDesc, args, privilegeArgs, aliases, cooldown, enabled, permLevel, supportsPrivilege };
+        this.config = { name, description, category, privilegeDesc, args, privilegeArgs, aliases, cooldown, enabled, permLevel, supportsPrivilege };
     }
 
     async run(client: Gdreqbot, msg: ChatMessage, channel: string, args?: string[], userPerms?: PermLevels, privilegeMode?: boolean) {}
@@ -26,6 +27,7 @@ class BaseCommand {
 interface Config {
     name: string;
     description?: string;
+    category?: string;
     privilegeDesc?: string;
     args?: string;
     privilegeArgs?: string;

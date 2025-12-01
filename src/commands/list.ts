@@ -9,6 +9,7 @@ export = class ListCommand extends BaseCommand {
         super({
             name: "list",
             description: "Lists levels in the queue",
+            category: "requests",
             args: "[<page>]",
             aliases: ["l", "q", "queue"],
             enabled: true

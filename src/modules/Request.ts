@@ -30,9 +30,9 @@ class Request {
 
             if (levels.find(l => l.id == newLvl.id))
                 return { status: ResCode.ALREADY_ADDED };
-            else if (sets.max_per_user != -1 && levels.filter(l => l.user == user).length >= sets.max_per_user)
+            else if (sets.max_levels_per_user != -1 && levels.filter(l => l.user == user).length >= sets.max_levels_per_user)
                 return { status: ResCode.MAX_PER_USER };
-            else if (sets.max_queue != -1 && levels.length >= sets.max_queue)
+            else if (sets.max_queue_size != -1 && levels.length >= sets.max_queue_size)
                 return { status: ResCode.FULL };
 
             levels.push(newLvl);
@@ -174,19 +174,19 @@ class Request {
                 break;
             }
 
-            case "max_per_user": {
+            case "max_levels_per_user": {
                 if (isNaN(parseInt(value)))
                     return { status: ResCode.INVALID_VALUE };
 
-                sets.max_per_user = parseInt(value);
+                sets.max_levels_per_user = parseInt(value);
                 break;
             }
 
-            case "max_queue": {
+            case "max_queue_size": {
                 if (isNaN(parseInt(value)))
                     return { status: ResCode.INVALID_VALUE };
 
-                sets.max_queue = parseInt(value);
+                sets.max_queue_size = parseInt(value);
                 break;
             }
 

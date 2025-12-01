@@ -1,10 +1,13 @@
-require('dotenv').config();
+import dotenv from "dotenv";
+dotenv.config({ quiet: true });
 
 import express, { Request, Response } from "express";
 import path from 'path';
 import querystring from "querystring";
 import superagent from "superagent";
-import Gdreqbot from './core';
+import Gdreqbot, { channelsdb } from './core';
+import { getUserByToken } from "./apis/twitch";
+import { User } from "./structs/user";
 
 const server = express();
 const port = process.env.PORT || 80;
@@ -30,10 +33,10 @@ export = class {
             renderView(req, res, 'index');
         });
 
-        server.get('/auth/twitch', (req, res) => {
+        server.get('/auth', (req, res) => {
             let url = 'https://id.twitch.tv/oauth2/authorize?' + querystring.stringify({
                 client_id: client.config.clientId,
-                redirect_uri: 'http://localhost:3000',
+                redirect_uri: process.env.REDIRECT_URI,
                 response_type: 'code',
                 scope: 'chat:read chat:edit'
             });
@@ -41,36 +44,53 @@ export = class {
             res.redirect(url);
         });
 
-server.get('/auth/twitch/callback', async (req, res) => {
-  const code = req.query.code as string;
-  const tokenUrl = 'https://id.twitch.tv/oauth2/token';
-  
-  // Prepare data for the token request
-  const data = querystring.stringify({
-    client_id: client.config.clientId,
-    client_secret: client.config.clientSecret,
-    code: code,
-    grant_type: 'authorization_code',
-    redirect_uri: 'http://localhost:3000',
-  });
+        server.get('/auth/callback', async (req, res) => {
+            let data = querystring.stringify({
+                client_id: client.config.clientId,
+                client_secret: client.config.clientSecret,
+                code: req.query.code as string,
+                grant_type: 'authorization_code',
+                redirect_uri: process.env.REDIRECT_URI,
+            });
 
-  try {
-    // Send request to Twitch to get the access token using Superagent
-    const response = await superagent
-      .post(tokenUrl)
-      .set('Content-Type', 'application/x-www-form-urlencoded')
-      .send(data);
+            try {
+                let auth = await superagent
+                    .post('https://id.twitch.tv/oauth2/token')
+                    .set('Content-Type', 'application/x-www-form-urlencoded')
+                    .send(data);
 
-    // Parse response and get access token
-    const { access_token, refresh_token } = response.body;
+                let { access_token } = auth.body;
+                let user = await getUserByToken(access_token);
 
-    // Store the access token and refresh token securely (e.g., in a database or session)
-    res.json({ access_token, refresh_token });
-  } catch (error) {
-    console.error('Error exchanging code for access token:', error);
-    res.status(500).send('Error exchanging code for access token');
-  }
-});
+                let channelName = user.data[0].login;
+                let channelId = user.data[0].id;
+
+                let channels: User[] = channelsdb.get("channels");
+                let channel: User = channels.find(c => c.userId == channelId);
+
+                if (!channel) {
+                    // push to channels db
+                    channels.push({ userId: channelId, userName: channelName });
+                    await channelsdb.set("channels", channels);
+
+                    await client.join(channelName);
+                    await client.db.setDefault({ channelId, channelName });
+
+                    await client.say(channelName, "Thanks for adding gdreqbot! You can get a list of commands by typing !help");
+                } else if (channel.userName != channelName) {
+                    let idx = channels.findIndex(c => c.userId == channelId);
+                    channels[idx].userName = channelName;
+
+                    await channelsdb.set("channels", channels);
+                    await client.join(channelName);
+                }
+
+                renderView(req, res, 'authsuccess');
+            } catch (err) {
+                client.logger.error('Error exchanging code for access token:', err);
+                renderView(req, res, 'autherror');
+            }
+        });
 
         server.get('/stats', (req, res) => {
             renderView(req, res, 'stats');

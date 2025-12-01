@@ -32,7 +32,7 @@ export = class PrivilegeCommand extends BaseCommand {
         try {
             await cmd.run(client, msg, channel, newArgs, userPerms, true);
         } catch (e) {
-            client.say(channel, `An error occurred running command: ${cmd.config.name}`, { replyTo: msg });
+            client.say(channel, `An error occurred running command: ${cmd.config.name}. If the issue persists, please contact the developer.`, { replyTo: msg });
             console.error(e);
         }
     }

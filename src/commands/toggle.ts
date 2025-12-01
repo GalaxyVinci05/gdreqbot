@@ -8,6 +8,7 @@ export = class ToggleCommand extends BaseCommand {
         super({
             name: "toggle",
             description: "Toggle requests",
+            category: "requests",
             aliases: ["t"],
             enabled: true,
             permLevel: PermLevels.MOD
