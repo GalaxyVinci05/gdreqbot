@@ -11,6 +11,7 @@ import { User } from "./structs/user";
 
 const server = express();
 const port = process.env.PORT || 80;
+const hostname = process.env.HOSTNAME || 'localhost';
 
 export = class {
     async run(client: Gdreqbot) {
@@ -108,6 +109,6 @@ export = class {
             renderView(req, res, 'privacy-policy');
         });
 
-        client.server = server.listen(port, () => console.log(`Server listening on port ${port}`));
+        client.server = server.listen(parseInt(port.toString()), hostname, () => console.log(`Server listening on http(s)://${hostname}:${port}`));
     }
 }
