@@ -61,7 +61,7 @@ class Database {
 
             return entry.data[0];
         } else {
-            entry = Object.assign(defaultValues, query, newData);
+            entry = Object.assign({}, defaultValues, query, newData);
             data.push(entry);
             await this.db.set(path, data);
 
