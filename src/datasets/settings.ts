@@ -2,7 +2,7 @@ export const defaultValues: Settings = {
     channelId: "",
     channelName: "",
     req_enabled: false,
-    max_levels_per_user: 2,
+    max_levels_per_user: -1,
     max_queue_size: -1
 }
 
