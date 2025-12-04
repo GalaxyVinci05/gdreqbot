@@ -111,7 +111,7 @@ client.onMessage(async (channel, user, text, msg) => {
 
     let isId = text.match(/\b\d{5,9}\b/);
 
-    if (isId && userPerms != PermLevels.BLACKLISTED) {
+    if (!text.startsWith(config.prefix) && isId && userPerms != PermLevels.BLACKLISTED) {
         let res = await client.req.addLevel(client, msg.channelId, { userId: msg.userInfo.userId, userName: msg.userInfo.userName }, isId[0]);
             
         switch (res.status) {
@@ -142,12 +142,15 @@ client.onMessage(async (channel, user, text, msg) => {
 
             case ResCode.OK: {
                 client.say(channel, `PogChamp Added '${res.level.name}' (${res.level.id}) by ${res.level.creator} to the queue at position ${levels.levels.length}`, { replyTo: msg });
+                client.logger.log(`Added leve in channel: ${channel}`);
                 break;
             }
         }
+
+        return;
     }
 
-    if (!text.startsWith(config.prefix) || isId) return;
+    if (!text.startsWith(config.prefix)) return;
 
     let args = text.slice(config.prefix.length).trim().split(/ +/);
     let cmdName = args.shift().toLowerCase();
