@@ -1,0 +1,34 @@
+<%- include('components/header') %>
+        <section class="section">
+            <div class="container">
+                <h1 class="title">Dashboard</h1>
+                <hr>
+                <p class="subtitle">Logged in as: <%= user.userName %></p>
+                <form action="/logout" method="GET">
+                    <button class="button" type="submit">
+                        <span class="icon has-text-danger">
+                            <i class="fas fa-arrow-left"></i>
+                        </span>
+                        <span>Logout</span>
+                    </button>
+                </form>
+                <hr>
+                <p>• It's a good idea to VIP or MOD gdreqbot to avoid chat restrictions (e.g. followers-only and sub-only chat, slowmode, or others).</p>
+                <p>• If you later want to remove gdreqbot from your chat, use the !part command.</p>
+                <br>
+                <h1 class="title">Settings</h1>
+                <form class="box" action="/download" method="POST" autocomplete="off">
+                    <p class="title is-4">Prefix</p>
+                    <p class="subtitle is-6">The prefix used to call commands</p>
+                    <input class="input" type="text" placeholder="!" name="selected">
+                    <br></br>
+                    <button class="button" type="submit">
+                        <span class="icon has-text-info">
+                            <i class="fas fa-save"></i>
+                        </span>
+                        <span>Save</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+<%- include('components/footer') %>
