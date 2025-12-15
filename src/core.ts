@@ -102,6 +102,7 @@ client.onMessage(async (channel, user, text, msg) => {
     let blacklist: Blacklist = client.db.load("blacklist", { channelId: msg.channelId });
     let levels: Levels = client.db.load("levels", { channelId: msg.channelId });
     let sets: Settings = client.db.load("settings", { channelId: msg.channelId });
+    let perms: Perm[] = client.db.load("perms", { channelId: msg.channelId }).perms;
 
     if (msg.userInfo.userId == config.ownerId) userPerms = PermLevels.DEV;
     else if (msg.userInfo.isBroadcaster) userPerms = PermLevels.STREAMER;
@@ -113,7 +114,10 @@ client.onMessage(async (channel, user, text, msg) => {
 
     let isId = text.match(/\b\d{5,9}\b/);
 
-    if (!text.startsWith(config.prefix) && isId && userPerms != PermLevels.BLACKLISTED) {
+    if (!text.startsWith(config.prefix) && isId) {
+        let reqPerm = perms?.find(p => p.cmd == client.commands.get("req").config.name);
+        if ((reqPerm?.perm || client.commands.get("req").config.permLevel) > userPerms) return;
+
         let res = await client.req.addLevel(client, msg.channelId, { userId: msg.userInfo.userId, userName: msg.userInfo.userName }, isId[0]);
             
         switch (res.status) {
@@ -161,7 +165,6 @@ client.onMessage(async (channel, user, text, msg) => {
 
     if (!cmd || !cmd.config.enabled) return;
 
-    let perms: Perm[] = client.db.load("perms", { channelId: msg.channelId }).perms;
     let customPerm = perms?.find(p => p.cmd == cmd.config.name);
     if ((customPerm?.perm || cmd.config.permLevel) > userPerms) return;
 
