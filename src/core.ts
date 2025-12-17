@@ -119,6 +119,8 @@ client.onJoinFailure(async (channel, reason) => {
 });
 
 client.onMessage(async (channel, user, text, msg) => {
+    if (msg.userInfo.userId == client.config.botId) return;
+
     await client.db.setDefault({ channelId: msg.channelId, channelName: channel });
 
     let userPerms: PermLevels;
