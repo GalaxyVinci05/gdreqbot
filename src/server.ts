@@ -8,6 +8,7 @@ import { Strategy as twitchStrategy } from "passport-twitch-latest";
 import bodyParser from "body-parser";
 import { v4 as uuid } from "uuid";
 import path from 'path';
+import multer from "multer";
 import querystring from "querystring";
 import superagent from "superagent";
 import Gdreqbot, { channelsdb } from './core';
@@ -213,6 +214,25 @@ export = class {
                 user: req.user,
                 sets
             });
+        });
+
+        server.post('/dashboard/:user', this.checkAuth, multer().none(), async (req, res) => {
+            if ((req.user as User).userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+
+            let data: any = {};
+
+            for (let [key, value] of Object.entries(req.body)) {
+                let n = parseInt(value as any);
+                if (!isNaN(n))
+                    value = n;
+
+                data[key] = value;
+            }
+
+            await client.db.save("settings", { channelId: (req.user as User).userId }, data);
+
+            res.status(200);
         });
 
         server.get('/logout', (req, res, next) => {
