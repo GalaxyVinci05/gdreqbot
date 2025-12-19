@@ -10,7 +10,7 @@ import { v4 as uuid } from "uuid";
 import path from 'path';
 import multer from "multer";
 import querystring from "querystring";
-import superagent from "superagent";
+import superagent, { PUT } from "superagent";
 import Gdreqbot, { channelsdb } from './core';
 import { getUserByToken } from "./apis/twitch";
 import { User } from "./structs/user";
@@ -88,6 +88,8 @@ export = class {
         passport.deserializeUser((userId, done) => {
             let channels: User[] = channelsdb.get("channels");
             let user = channels.find(c => c.userId == userId);
+            if (!user)
+                return done(null, false);
 
             done(null, user);
         });
@@ -101,8 +103,6 @@ export = class {
         };
 
         server.get('/', (req, res) => {
-            console.log(req.isAuthenticated());
-            console.log(req.user);
             renderView(req, res, 'index');
         });
 
@@ -119,66 +119,6 @@ export = class {
         server.get('/auth/error', (req, res) => {
             renderView(req, res, 'autherror');
         });
-
-        //server.get('/auth', (req, res) => {
-        //    let url = 'https://id.twitch.tv/oauth2/authorize?' + querystring.stringify({
-        //        client_id: client.config.clientId,
-        //        redirect_uri: process.env.REDIRECT_URI,
-        //        response_type: 'code',
-        //        scope: 'chat:read chat:edit'
-        //    });
-
-        //    res.redirect(url);
-        //});
-
-        //server.get('/auth/callback', async (req, res) => {
-        //    let data = querystring.stringify({
-        //        client_id: client.config.clientId,
-        //        client_secret: client.config.clientSecret,
-        //        code: req.query.code as string,
-        //        grant_type: 'authorization_code',
-        //        redirect_uri: process.env.REDIRECT_URI,
-        //    });
-
-        //    try {
-        //        let auth = await superagent
-        //            .post('https://id.twitch.tv/oauth2/token')
-        //            .set('Content-Type', 'application/x-www-form-urlencoded')
-        //            .send(data);
-
-        //        let { access_token } = auth.body;
-        //        let user = await getUserByToken(access_token);
-
-        //        let channelName = user.data[0].login;
-        //        let channelId = user.data[0].id;
-
-        //        let channels: User[] = channelsdb.get("channels");
-        //        let channel: User = channels.find(c => c.userId == channelId);
-
-        //        if (!channel) {
-        //            // push to channels db
-        //            channels.push({ userId: channelId, userName: channelName });
-        //            await channelsdb.set("channels", channels);
-
-        //            await client.join(channelName);
-        //            await client.db.setDefault({ channelId, channelName });
-
-        //            await client.say(channelName, "Thanks for adding gdreqbot! You can get a list of commands by typing !help");
-        //            client.logger.log(`→   New channel joined: ${channelName}`);
-        //        } else if (channel.userName != channelName) {
-        //            let idx = channels.findIndex(c => c.userId == channelId);
-        //            channels[idx].userName = channelName;
-
-        //            await channelsdb.set("channels", channels);
-        //            await client.join(channelName);
-        //        }
-
-        //        renderView(req, res, 'authsuccess');
-        //    } catch (err) {
-        //        client.logger.error('Error exchanging code for access token:', err);
-        //        renderView(req, res, 'autherror');
-        //    }
-        //});
 
         server.get('/stats', (req, res) => {
             renderView(req, res, 'stats');
@@ -219,18 +159,11 @@ export = class {
         server.post('/dashboard/:user', this.checkAuth, multer().none(), async (req, res) => {
             if ((req.user as User).userId != req.params.user)
                 return res.status(403).send('Unauthorized');
+            
+            console.log(req.body);
+            let sets = this.parseSettings(req.body);
 
-            let data: any = {};
-
-            for (let [key, value] of Object.entries(req.body)) {
-                let n = parseInt(value as any);
-                if (!isNaN(n))
-                    value = n;
-
-                data[key] = value;
-            }
-
-            await client.db.save("settings", { channelId: (req.user as User).userId }, data);
+            await client.db.save("settings", { channelId: (req.user as User).userId }, sets);
 
             res.status(200);
         });
@@ -244,6 +177,27 @@ export = class {
             res.redirect('/');
         });
 
+        server.get('/dashboard/:user/part', this.checkAuth, async (req, res, next) => {
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
+
+            if (userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+
+            let channels: User[] = channelsdb.get("channels");
+            let user = channels.find(c => c.userId == userId);
+
+            if (user) {
+                try {
+                    await client.commands.get('part').run(client, { channelId: userId } as any, userName);  // yes, I feel shame in doing this
+                    res.redirect('/');
+                } catch (err) {
+                    client.logger.error('', err);
+                    renderView(req, res, 'error');
+                }
+            }
+        });
+
         client.server = server.listen(parseInt(port.toString()), hostname, () => console.log(`Server listening on http(s)://${hostname}:${port}`));
     }
 
@@ -251,6 +205,20 @@ export = class {
         if (req.isAuthenticated())
             return next();
         
-        res.redirect('/dashboard');
+        res.redirect('/');
+    }
+
+    parseSettings(data: any) {
+        let parsed: any = {};
+
+        for (let [key, value] of Object.entries(data)) {
+            let n = parseInt(value as any);
+            if (!isNaN(n))
+                value = n;
+
+            parsed[key] = value;
+        }
+
+        return parsed;
     }
 }

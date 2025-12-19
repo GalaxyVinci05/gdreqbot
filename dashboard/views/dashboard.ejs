@@ -19,21 +19,21 @@
                 <h1 class="title">Settings</h1>
                 <form class="box" id="settings">
                     <div>
-                        <p class="title is-4">Prefix</p>
+                        <p class="title is-5">Prefix</p>
                         <p class="subtitle is-6">The prefix used to call commands</p>
-                        <input class="input" type="text" value="!" name="prefix" id="prefix">
+                        <input class="input" type="text" value="<%= sets.prefix %>" name="prefix" id="prefix">
                     </div>
                     <br>
                     <div>
-                        <p class="title is-4">Max Levels Per User</p>
+                        <p class="title is-5">Max Levels Per User</p>
                         <p class="subtitle is-6">The maximum amount of levels a user can have in the queue at the same time (-1 = disabled)</p>
-                        <input class="input" type="number" min="-1" value="-1" name="max_levels_per_user" id="max_levels_per_user">
+                        <input class="input" type="number" min="-1" value="<%= sets.max_levels_per_user %>" name="max_levels_per_user" id="max_levels_per_user">
                     </div>
                     <br>
                     <div>
-                        <p class="title is-4">Max Queue Size</p>
+                        <p class="title is-5">Max Queue Size</p>
                         <p class="subtitle is-6">The maximum amount of levels the queue can hold (-1 = disabled)</p>
-                        <input class="input" type="number" min="-1" value="-1" name="max_queue_size" id="max_queue_size">
+                        <input class="input" type="number" min="-1" value="<%= sets.max_queue_size %>" name="max_queue_size" id="max_queue_size">
                     </div>
                     <br></br>
                     <button class="button" type="submit">
@@ -43,12 +43,80 @@
                         <span>Save</span>
                     </button>
                 </form>
+                <br>
+                <h1 class="title">Command Permissions</h1>
+                <form class="box" id="perms">
+                    <div>
+                        <div style="float: left">
+                            <p class="title is-5">!ping</p>
+                            <p class="subtitle is-6">Gives the bot latency</p>
+                        </div>
+                        <div class="dropdown" style="float: right">
+                            <div class="dropdown-trigger">
+                                <button class="button" aria-haspopup="true" aria-controls="dropdown-menu-1">
+                                <span>Dropdown button</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu" id="dropdown-menu-1" role="menu">
+                                <div class="dropdown-content">
+                                    <a class="dropdown-item" data-value="item1">item1</a>
+                                    <a class="dropdown-item" data-value="item2">item2</a>
+                                </div>
+                            </div>
+                            <input type="hidden" id="dropdown1-value" name="dropdown1" value="">
+                        </div>
+                    </div>
+                    <br>
+                    <hr>
+                    <div>
+                        <div style="float: left">
+                            <p class="title is-5">!ping</p>
+                            <p class="subtitle is-6">Gives the bot latency</p>
+                        </div>
+                        <div class="dropdown" style="float: right">
+                            <div class="dropdown-trigger">
+                                <button class="button" aria-haspopup="true" aria-controls="dropdown-menu-2">
+                                <span>Dropdown button</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu" id="dropdown-menu-2" role="menu">
+                                <div class="dropdown-content">
+                                    <a class="dropdown-item" data-value="item1">item1</a>
+                                    <a class="dropdown-item" data-value="item2">item2</a>
+                                </div>
+                            </div>
+                            <input type="hidden" id="dropdown2-value" name="dropdown2" value="">
+                        </div>
+                    </div>
+                    <br>
+                    <hr>
+                    <button class="button" type="submit">
+                        <span class="icon has-text-info">
+                            <i class="fas fa-save"></i>
+                        </span>
+                        <span>Save</span>
+                    </button>
+                </form>
+                <hr>
+                <form action="/dashboard/<%= user.userId %>/part" method="GET">
+                    <button class="button" type="submit">
+                        <span class="icon has-text-danger">
+                            <i class="fas fa-arrow-left"></i>
+                        </span>
+                        <span>Part</span>
+                    </button>
+                </form>
+                <p>Note: parting gdreqbot will also log you out</p>
             </div>
         </section>
         <script>
-            let form = document.getElementById("settings");
-
-            async function sendData() {
+            async function sendData(form) {
                 let formData = new FormData(form);
                 let userId = "<%= user.userId %>";
 
@@ -63,9 +131,78 @@
                 }
             }
 
-            form.addEventListener("submit", (evt) => {
+            function saveMsg(saveButton) {
+                let msg = document.createElement('span');
+
+                msg.classList.add('has-text-success', 'ml-2');
+                msg.innerText = 'Saved successfully!';
+
+                saveButton.insertAdjacentElement('afterend', msg);
+                setTimeout(() => msg.remove(), 2000);
+            }
+            
+            let settings = document.getElementById("settings");
+            settings.addEventListener("submit", evt => {
                 evt.preventDefault();
-                sendData();
+                sendData(settings);
+
+                let saveButton = settings.querySelector('.button[type="submit"]');
+                saveMsg(saveButton);
+            });
+
+            let perms = document.getElementById("perms");
+            perms.addEventListener("submit", evt => {
+                evt.preventDefault();
+                sendData(perms);
+
+                let saveButton = perms.querySelector('.button[type="submit"]');
+                saveMsg(saveButton);
+            });
+
+            let dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(dropdown => {
+                let input = dropdown.querySelector(`input[type="hidden"]`);
+                let button = dropdown.querySelector('.dropdown-trigger button');
+                let selectedItem = null;
+
+                let trigger = dropdown.querySelector('.dropdown-trigger');
+                trigger.addEventListener('click', evt => {
+                    evt.stopPropagation();
+                    evt.preventDefault();
+                    
+                    dropdowns.forEach(other => {
+                        if (other != dropdown) {
+                            other.classList.remove('is-active');
+                        }
+                    });
+
+                    dropdown.classList.toggle('is-active');
+                });
+
+                let items = dropdown.querySelectorAll('.dropdown-item');
+                items.forEach(item => {
+                    item.addEventListener('click', evt => {
+                        evt.preventDefault();
+
+                        let selected = item.getAttribute('data-value');
+                        input.value = selected;
+                        button.innerHTML = `<span>${selected}</span><span class="icon is-small"><i class="fas fa-angle-down" aria-hidden="true"></i></span>`;
+
+                        items.forEach(i => i.classList.remove('is-active'));
+                        item.classList.add('is-active');
+                        console.log('selected: ', selected);
+
+                        dropdown.classList.remove('is-active');
+                    });
+                });
+            });
+
+            document.addEventListener('click', evt => {
+                dropdowns.forEach(dropdown => {
+                    if (!dropdown.contains(evt.target)) {
+                        dropdown.classList.remove('is-active');
+                    }
+                });
             });
         </script>
 <%- include('components/footer') %>
