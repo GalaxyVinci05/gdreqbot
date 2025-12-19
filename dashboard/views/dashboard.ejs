@@ -18,6 +18,7 @@
                 <br>
                 <h1 class="title">Settings</h1>
                 <form class="box" id="settings">
+                    <input type="hidden" name="formType" value="settings">
                     <div>
                         <p class="title is-5">Prefix</p>
                         <p class="subtitle is-6">The prefix used to call commands</p>
@@ -46,62 +47,38 @@
                 <br>
                 <h1 class="title">Command Permissions</h1>
                 <form class="box" id="perms">
+                    <input type="hidden" name="formType" value="perms">
+                    <% for (let i = 0; i < cmdData.length; i++) { %>
                     <div>
                         <div style="float: left">
-                            <p class="title is-5">!ping</p>
-                            <p class="subtitle is-6">Gives the bot latency</p>
+                            <p class="title is-5"><%= cmdData[i].name %></p>
+                            <p class="subtitle is-6"><%= cmdData[i].desc %></p>
                         </div>
-                        <div class="dropdown" style="float: right" data-default="item1">
+                        <div class="dropdown" style="float: right" data-default="<%= cmdData[i].defaultPerm %>">
                             <div class="dropdown-trigger">
-                                <button class="button" aria-haspopup="true" aria-controls="dropdown-menu-1">
-                                <span>Dropdown button</span>
+                                <button class="button" aria-haspopup="true" aria-controls="dropdown-menu-<%= i %>">
+                                <span><%= cmdData[i].perm %></span>
                                 <span class="icon is-small">
                                     <i class="fas fa-angle-down" aria-hidden="true"></i>
                                 </span>
                                 </button>
                             </div>
-                            <div class="dropdown-menu" id="dropdown-menu-1" role="menu">
+                            <div class="dropdown-menu" id="dropdown-menu-<%= i %>" role="menu">
                                 <div class="dropdown-content">
-                                    <a class="dropdown-item" data-value="item1">item1</a>
-                                    <a class="dropdown-item" data-value="item2">item2</a>
+                                    <% perms.forEach(perm => { %>
+                                    <a class="dropdown-item<% if (cmdData[i].perm == perm) { %> is-active<% } %>" data-value="<%= perm %>"><%= perm %></a>
+                                    <% }); %>
                                 </div>
                             </div>
-                            <button class="button reset-dropdown" type="button" style="margin-left: 10px">
+                            <button class="button reset-dropdown" type="button" style="margin-left: 10px" <% if (cmdData[i].isDefault) { %> disabled <% } %>>
                                 <p class="has-text-danger">Reset</p>
                             </button>
-                            <input type="hidden" id="dropdown1-value" name="dropdown1" value="">
+                            <input type="hidden" id="dropdown<%= i %>-value" name="dropdown<%= i %>" value="">
                         </div>
                     </div>
                     <br>
                     <hr>
-                    <div>
-                        <div style="float: left">
-                            <p class="title is-5">!ping</p>
-                            <p class="subtitle is-6">Gives the bot latency</p>
-                        </div>
-                        <div class="dropdown" style="float: right" data-default="item2">
-                            <div class="dropdown-trigger">
-                                <button class="button" aria-haspopup="true" aria-controls="dropdown-menu-2">
-                                <span>Dropdown button</span>
-                                <span class="icon is-small">
-                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
-                                </span>
-                                </button>
-                            </div>
-                            <div class="dropdown-menu" id="dropdown-menu-2" role="menu">
-                                <div class="dropdown-content">
-                                    <a class="dropdown-item" data-value="item1">item1</a>
-                                    <a class="dropdown-item" data-value="item2">item2</a>
-                                </div>
-                            </div>
-                            <button class="button reset-dropdown" type="button" style="margin-left: 10px">
-                                <p class="has-text-danger">Reset</p>
-                            </button>
-                            <input type="hidden" id="dropdown2-value" name="dropdown2" value="">
-                        </div>
-                    </div>
-                    <br>
-                    <hr>
+                    <% } %>
                     <button class="button" type="submit">
                         <span class="icon has-text-info">
                             <i class="fas fa-save"></i>

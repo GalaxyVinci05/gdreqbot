@@ -15,6 +15,8 @@ import Gdreqbot, { channelsdb } from './core';
 import { getUserByToken } from "./apis/twitch";
 import { User } from "./structs/user";
 import { Settings } from "./datasets/settings";
+import { Perm, Perms } from "./datasets/perms";
+import PermLevels from "./structs/PermLevels";
 
 const server = express();
 const port = process.env.PORT || 80;
@@ -144,26 +146,70 @@ export = class {
         });
 
         server.get('/dashboard/:user', this.checkAuth, (req, res) => {
-            if ((req.user as User).userId != req.params.user)
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
+
+            if (userId != req.params.user)
                 return res.status(403).send('Unauthorized');
 
-            let sets: Settings = client.db.load("settings", { channelId: (req.user as User).userId });
+            let sets: Settings = client.db.load("settings", { channelId: userId });
+            let perms: Perm[] = client.db.load("perms", { channelId: userId }).perms;
+
+            let cmdData: any = [];
+
+            client.commands.forEach(cmd => {
+                if (cmd.config.permLevel == PermLevels.DEV) return;
+
+                let permData = perms.find(p => p.cmd == cmd.config.name);
+
+                let toPush = {
+                    name: `${client.config.prefix}${cmd.config.name}`,
+                    desc: cmd.config.description,
+                    perm: this.normalize(PermLevels[permData?.perm || cmd.config.permLevel]),
+                    defaultPerm: this.normalize(PermLevels[cmd.config.permLevel]),
+                    isDefault: !Boolean(permData)
+                };
+
+                cmdData.push(toPush);
+            });
+
+            let permLiterals = Object.keys(PermLevels).filter(k => isNaN(Number(k)));
+            permLiterals.pop();
 
             res.render('dashboard', {
                 isAuthenticated: true,
                 user: req.user,
-                sets
+                sets,
+                cmdData,
+                perms: permLiterals.map(p => this.normalize(p))
             });
         });
 
         server.post('/dashboard/:user', this.checkAuth, multer().none(), async (req, res) => {
-            if ((req.user as User).userId != req.params.user)
-                return res.status(403).send('Unauthorized');
-            
-            console.log(req.body);
-            let sets = this.parseSettings(req.body);
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
 
-            await client.db.save("settings", { channelId: (req.user as User).userId }, sets);
+            if (userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+
+            switch (req.body.formType) {
+                case "settings": {
+                    let sets = this.parseSettings(req.body);
+                    await client.db.save("settings", { channelId: userId }, sets);
+                    client.logger.log(`Dashboard: updated settings for channel: ${userName}`);
+                    break;
+                }
+
+                case "perms": {
+                    console.log(req.body);
+                    break;
+                }
+
+                default: {
+                    client.logger.error("what???");
+                    break;
+                }
+            }
 
             res.status(200);
         });
@@ -220,5 +266,10 @@ export = class {
         }
 
         return parsed;
+    }
+
+    normalize(str: string) {
+        let normalized = str.toLowerCase();
+        return normalized.charAt(0).toUpperCase() + normalized.slice(1);
     }
 }
