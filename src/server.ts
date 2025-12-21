@@ -17,6 +17,7 @@ import { User } from "./structs/user";
 import { Settings } from "./datasets/settings";
 import { Perm, Perms } from "./datasets/perms";
 import PermLevels from "./structs/PermLevels";
+import BaseCommand from "./structs/BaseCommand";
 
 const server = express();
 const port = process.env.PORT || 80;
@@ -145,9 +146,11 @@ export = class {
             res.redirect('/auth');
         });
 
-        server.get('/dashboard/:user', this.checkAuth, (req, res) => {
+        server.get('/dashboard/:user', this.checkAuth, async (req, res) => {
             let userId = (req.user as User).userId;
             let userName = (req.user as User).userName;
+
+            await client.db.setDefault({ channelId: userId, channelName: userName });
 
             if (userId != req.params.user)
                 return res.status(403).send('Unauthorized');
@@ -201,7 +204,25 @@ export = class {
                 }
 
                 case "perms": {
-                    console.log(req.body);
+                    let perms: Perm[] = client.db.load("perms", { channelId: userId }).perms;
+                    let filtered = this.filterPerms(req.body, perms, client.commands);
+
+                    filtered.forEach(perm => {
+                        let name = perm.cmd.split('.')[0];
+                        let toDelete = Boolean(perm.cmd.split('.')[1]);
+
+                        let savedPerm = perms.find(p => p.cmd == name);
+
+                        if (savedPerm) {
+                            if (toDelete)
+                                perms.splice(perms.findIndex(p => p.cmd == name), 1);
+                            else
+                                savedPerm.perm = perm.perm;
+                        } else
+                            if (!toDelete) perms.push(perm);
+                    });
+
+                    await client.db.save("perms", { channelId: userId }, { perms });
                     break;
                 }
 
@@ -244,7 +265,7 @@ export = class {
             }
         });
 
-        client.server = server.listen(parseInt(port.toString()), hostname, () => console.log(`Server listening on http(s)://${hostname}:${port}`));
+        client.server = server.listen(parseInt(port.toString()), hostname, () => client.logger.log(`Server listening on http(s)://${hostname}:${port}`));
     }
 
     checkAuth(req: Request, res: Response, next: NextFunction) {
@@ -258,6 +279,8 @@ export = class {
         let parsed: any = {};
 
         for (let [key, value] of Object.entries(data)) {
+            if (key == "formType") continue;
+
             let n = parseInt(value as any);
             if (!isNaN(n))
                 value = n;
@@ -266,6 +289,29 @@ export = class {
         }
 
         return parsed;
+    }
+
+    filterPerms(data: any, perms: Perm[], cmds: Map<string, BaseCommand>) {
+        let filtered: Perm[] = [];
+
+        for (let [key, value] of Object.entries(data)) {
+            if (!value) continue;
+
+            let cmd = cmds.get(key);
+            if (!cmd) continue;
+
+            let permData = perms.find(p => p.cmd == cmd.config.name);
+            let permValue: any = PermLevels[(value as any).toUpperCase()];
+
+            if (permValue != (permData?.perm || cmd.config.permLevel)) {
+                filtered.push({
+                    cmd: permValue == cmd.config.permLevel ? `${cmd.config.name}.d` : cmd.config.name,
+                    perm: permValue
+                });
+            }
+        }
+
+        return filtered;
     }
 
     normalize(str: string) {
