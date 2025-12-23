@@ -1,13 +1,23 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
+import session from "express-session";
+import passport, { serializeUser } from "passport";
+import { Strategy as twitchStrategy } from "passport-twitch-latest";
+import bodyParser from "body-parser";
+import { v4 as uuid } from "uuid";
 import path from 'path';
+import multer from "multer";
 import querystring from "querystring";
-import superagent from "superagent";
+import superagent, { PUT } from "superagent";
 import Gdreqbot, { channelsdb } from './core';
 import { getUserByToken } from "./apis/twitch";
 import { User } from "./structs/user";
+import { Settings } from "./datasets/settings";
+import { Perm, Perms } from "./datasets/perms";
+import PermLevels from "./structs/PermLevels";
+import BaseCommand from "./structs/BaseCommand";
 
 const server = express();
 const port = process.env.PORT || 80;
@@ -18,53 +28,32 @@ export = class {
         server.use('/public', express.static(path.resolve(__dirname, '../dashboard/public')));
         server.use(express.json());
         server.use(express.urlencoded({ extended: false }));
+        server.use(
+            session({
+                genid: () => {
+                    return uuid();
+                },
+                secret: process.env.SESSION_SECRET,
+                resave: false,
+                saveUninitialized: false
+            }),
+        );
+        server.use(passport.initialize());
+        server.use(passport.session());
+        server.use(bodyParser.json());
         server.set('views', path.join(__dirname, '../dashboard/views'));
 
         server.set('view engine', 'ejs');
 
-        const renderView = (req: Request, res: Response, view: string, data: any = {}) => {
-            const baseData = {
-                bot: client,
-                path: req.path,
-            };
-            res.render(path.resolve(`./dashboard/views/${view}`), Object.assign(baseData, data));
-        };
-
-        server.get('/', (req, res) => {
-            renderView(req, res, 'index');
-        });
-
-        server.get('/auth', (req, res) => {
-            let url = 'https://id.twitch.tv/oauth2/authorize?' + querystring.stringify({
-                client_id: client.config.clientId,
-                redirect_uri: process.env.REDIRECT_URI,
-                response_type: 'code',
+        passport.use(
+            new twitchStrategy({
+                clientID: client.config.clientId,
+                clientSecret: client.config.clientSecret,
+                callbackURL: process.env.REDIRECT_URI,
                 scope: 'chat:read chat:edit'
-            });
-
-            res.redirect(url);
-        });
-
-        server.get('/auth/callback', async (req, res) => {
-            let data = querystring.stringify({
-                client_id: client.config.clientId,
-                client_secret: client.config.clientSecret,
-                code: req.query.code as string,
-                grant_type: 'authorization_code',
-                redirect_uri: process.env.REDIRECT_URI,
-            });
-
-            try {
-                let auth = await superagent
-                    .post('https://id.twitch.tv/oauth2/token')
-                    .set('Content-Type', 'application/x-www-form-urlencoded')
-                    .send(data);
-
-                let { access_token } = auth.body;
-                let user = await getUserByToken(access_token);
-
-                let channelName = user.data[0].login;
-                let channelId = user.data[0].id;
+            }, async (accessToken, refreshToken, profile, done) => {
+                let channelName = profile.login;
+                let channelId = profile.id;
 
                 let channels: User[] = channelsdb.get("channels");
                 let channel: User = channels.find(c => c.userId == channelId);
@@ -87,11 +76,65 @@ export = class {
                     await client.join(channelName);
                 }
 
-                renderView(req, res, 'authsuccess');
-            } catch (err) {
-                client.logger.error('Error exchanging code for access token:', err);
-                renderView(req, res, 'autherror');
-            }
+                let user: User = {
+                    userId: profile.id,
+                    userName: profile.login
+                };
+                done(null, user);
+            })
+        );
+
+        passport.serializeUser((user: User, done) => {
+            done(null, user.userId);
+        });
+
+        passport.deserializeUser((userId, done) => {
+            let channels: User[] = channelsdb.get("channels");
+            let user = channels.find(c => c.userId == userId);
+            if (!user)
+                return done(null, false);
+
+            done(null, user);
+        });
+
+        const renderView = (req: Request, res: Response, view: string, data: any = {}) => {
+            const baseData = {
+                bot: client,
+                path: req.path,
+            };
+            res.render(path.resolve(`./dashboard/views/${view}`), Object.assign(baseData, data));
+        };
+
+        server.get('/', (req, res) => {
+            renderView(req, res, 'index');
+        });
+
+        server.get('/auth', (req, res, next) => {
+            let redirectTo = req.query.redirectTo || 'dashboard';
+
+            passport.authenticate('twitch', {
+                state: redirectTo as string
+            })(req, res, next);
+        });
+        server.get('/auth/callback', passport.authenticate('twitch', {
+            failureRedirect: '/auth/error'
+        }), (req, res) => {
+            let redirectTo = req.query.state;
+
+            if (redirectTo == 'add')
+                res.redirect('/auth/success');
+            else if (redirectTo == 'dashboard')
+                res.redirect('/dashboard');
+            else
+                res.redirect('/');
+        });
+
+        server.get('/auth/success', (req, res) => {
+            renderView(req, res, 'authsuccess');
+        });
+
+        server.get('/auth/error', (req, res) => {
+            renderView(req, res, 'autherror');
         });
 
         server.get('/stats', (req, res) => {
@@ -110,6 +153,219 @@ export = class {
             renderView(req, res, 'privacy-policy');
         });
 
-        client.server = server.listen(parseInt(port.toString()), hostname, () => console.log(`Server listening on http(s)://${hostname}:${port}`));
+        server.get('/faq', (req, res) => {
+            renderView(req, res, 'faq');
+        });
+
+        server.get('/updates', (req, res) => {
+            renderView(req, res, 'updates');
+        });
+
+        server.get('/dashboard', (req, res) => {
+            if (req.isAuthenticated())
+                return res.redirect(`/dashboard/${(req.user as User).userId}`);
+
+            res.redirect('/auth');
+        });
+
+        server.get('/dashboard/:user', this.checkAuth, async (req, res) => {
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
+
+            await client.db.setDefault({ channelId: userId, channelName: userName });
+
+            if (userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+
+            let sets: Settings = client.db.load("settings", { channelId: userId });
+            let perms: Perm[] = client.db.load("perms", { channelId: userId }).perms;
+
+            let cmdData: any = [];
+            let setData: any = this.getSettings(sets);
+
+            client.commands.forEach(cmd => {
+                if (cmd.config.permLevel == PermLevels.DEV) return;
+
+                let permData = perms.find(p => p.cmd == cmd.config.name);
+
+                let toPush = {
+                    name: cmd.config.name,
+                    desc: cmd.config.description,
+                    perm: this.normalize(PermLevels[permData?.perm ?? cmd.config.permLevel]),
+                    defaultPerm: this.normalize(PermLevels[cmd.config.permLevel]),
+                    isDefault: !Boolean(permData)
+                };
+
+                cmdData.push(toPush);
+            });
+
+            let permLiterals = Object.keys(PermLevels).filter(k => isNaN(Number(k)));
+            permLiterals.pop();
+
+            res.render('dashboard', {
+                isAuthenticated: true,
+                user: req.user,
+                setData,
+                cmdData,
+                perms: permLiterals.map(p => this.normalize(p))
+            });
+        });
+
+        server.post('/dashboard/:user', this.checkAuth, multer().none(), async (req, res) => {
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
+
+            if (userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+
+            switch (req.body.formType) {
+                case "settings": {
+                    let sets = this.parseSettings(req.body);
+                    await client.db.save("settings", { channelId: userId }, sets);
+                    client.logger.log(`Dashboard: updated settings for channel: ${userName}`);
+                    break;
+                }
+
+                case "perms": {
+                    let perms: Perm[] = client.db.load("perms", { channelId: userId }).perms;
+                    let filtered = this.filterPerms(req.body, perms, client.commands);
+
+                    filtered.forEach(perm => {
+                        let name = perm.cmd.split('.')[0];
+                        let toDelete = Boolean(perm.cmd.split('.')[1]);
+
+                        let savedPerm = perms.find(p => p.cmd == name);
+
+                        if (savedPerm) {
+                            if (toDelete)
+                                perms.splice(perms.findIndex(p => p.cmd == name), 1);
+                            else
+                                savedPerm.perm = perm.perm;
+                        } else
+                            if (!toDelete) perms.push(perm);
+                    });
+
+                    await client.db.save("perms", { channelId: userId }, { perms });
+                    client.logger.log(`Dashboard: updated perms for channel: ${userName}`);
+                    break;
+                }
+
+                default: {
+                    client.logger.error("what???");
+                    break;
+                }
+            }
+
+            res.status(200);
+        });
+
+        server.get('/logout', (req, res, next) => {
+            if (req.isAuthenticated())
+                req.logout(err => {
+                    if (err) return next(err);
+                });
+
+            res.redirect('/');
+        });
+
+        server.get('/dashboard/:user/part', this.checkAuth, async (req, res, next) => {
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
+
+            if (userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+
+            let channels: User[] = channelsdb.get("channels");
+            let user = channels.find(c => c.userId == userId);
+
+            if (user) {
+                try {
+                    await client.commands.get('part').run(client, { channelId: userId } as any, userName);  // yes, I feel shame in doing this
+                    res.redirect('/');
+                } catch (err) {
+                    client.logger.error('', err);
+                    renderView(req, res, 'error');
+                }
+            }
+        });
+
+        client.server = server.listen(parseInt(port.toString()), hostname, () => client.logger.log(`Server listening on http(s)://${hostname}:${port}`));
+    }
+
+    checkAuth(req: Request, res: Response, next: NextFunction) {
+        if (req.isAuthenticated())
+            return next();
+
+        res.redirect('/');
+    }
+
+    getSettings(sets: any) {
+        const { defaultValues } = require('./datasets/settings');
+        let obj: any = {};
+
+        for (let [key, value] of Object.entries(defaultValues).slice(3)) {
+            if (!sets[key])
+                obj[key] = {
+                    value,
+                    defaultValue: value,
+                    isDefault: true
+                };
+            else
+                obj[key] = {
+                    value: sets[key],
+                    defaultValue: value,
+                    isDefault: sets[key] == defaultValues[key]
+                };
+        }
+
+        return obj;
+    }
+
+    parseSettings(data: any) {
+        let parsed: any = {};
+
+        for (let [key, value] of Object.entries(data)) {
+            if (key == "formType") continue;
+            if (!value) {
+                parsed[key] = -1;
+                continue;
+            }
+
+            let n = parseInt(value as any);
+            if (!isNaN(n))
+                value = n;
+
+            parsed[key] = value;
+        }
+
+        return parsed;
+    }
+
+    filterPerms(data: any, perms: Perm[], cmds: Map<string, BaseCommand>) {
+        let filtered: Perm[] = [];
+
+        for (let [key, value] of Object.entries(data)) {
+            if (!value) continue;
+
+            let cmd = cmds.get(key);
+            if (!cmd) continue;
+
+            let permData = perms.find(p => p.cmd == cmd.config.name);
+            let permValue: any = PermLevels[(value as any).toUpperCase()];
+
+            if (permValue != (permData?.perm ?? cmd.config.permLevel)) {
+                filtered.push({
+                    cmd: permValue == cmd.config.permLevel ? `${cmd.config.name}.d` : cmd.config.name,
+                    perm: permValue
+                });
+            }
+        }
+
+        return filtered;
+    }
+
+    normalize(str: string) {
+        let normalized = str.toLowerCase();
+        return normalized.charAt(0).toUpperCase() + normalized.slice(1);
     }
 }

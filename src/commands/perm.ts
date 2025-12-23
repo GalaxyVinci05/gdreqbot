@@ -3,6 +3,7 @@ import Gdreqbot from "../core";
 import BaseCommand from "../structs/BaseCommand";
 import PermLevels from "../structs/PermLevels";
 import { Perm } from "../datasets/perms";
+import { Settings } from "../datasets/settings";
 
 export = class PermCommand extends BaseCommand {
     constructor() {
@@ -33,6 +34,8 @@ export = class PermCommand extends BaseCommand {
         let customPerms = perms.find(p => p.cmd == cmd.config.name);
         if ((customPerms?.perm || cmd.config.permLevel) > userPerms) return client.say(channel, "You can't manage commands that require a permission higher than yours.", { replyTo: msg });
 
+        let sets: Settings = client.db.load("settings", { channelId: msg.channelId });
+
         switch (args[0]) {
             case "set": {
                 if (!args[2]) return client.say(channel, `You must select a permission to apply: ${Object.keys(PermLevels).filter(k => isNaN(Number(k))).join(" | ")}`);
@@ -53,7 +56,7 @@ export = class PermCommand extends BaseCommand {
                 }
 
                 await client.db.save("perms", { channelId: msg.channelId }, { perms });
-                client.say(channel, `Set permission for ${client.config.prefix}${cmd.config.name} to: ${perm}`, { replyTo: msg });
+                client.say(channel, `Set permission for ${sets.prefix ?? client.config.prefix}${cmd.config.name} to: ${perm}`, { replyTo: msg });
                 break;
             }
 
@@ -63,7 +66,7 @@ export = class PermCommand extends BaseCommand {
                     await client.db.save("perms", { channelId: msg.channelId }, { perms });
                 }
 
-                client.say(channel, `Reset ${client.config.prefix}${cmd.config.name} to its default permission (${PermLevels[cmd.config.permLevel]})`, { replyTo: msg });
+                client.say(channel, `Reset ${sets.prefix ?? client.config.prefix}${cmd.config.name} to its default permission (${PermLevels[cmd.config.permLevel]})`, { replyTo: msg });
                 break;
             }
         }

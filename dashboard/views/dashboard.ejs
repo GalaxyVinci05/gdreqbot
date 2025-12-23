@@ -1,0 +1,317 @@
+<%- include('components/header') %>
+        <style>
+            .input-container {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .reset {
+                margin-left: 10px;
+                color: #ff3860;
+                border: 1px solid #ff3860;
+            }
+
+            .reset:hover:enabled {
+                background-color: #ff3860;
+                color: white;
+                border-color: #ff3860;
+            }
+
+            .reset:hover:disabled {
+                color: #ff3860;
+            }
+
+            .enable {
+                margin-left: 10px;
+                color: #1ca64c;
+                border: 1px solid #1ca64c;
+            }
+
+            .enable:hover {
+                background-color: #1ca64c;
+                color: white;
+                border-color: #1ca64c;
+            }
+
+            .disable {
+                margin-left: 10px;
+                color: #ff3860;
+                border: 1px solid #ff3860;
+            }
+
+            .disable:hover {
+                background-color: #ff3860;
+                color: white;
+                border-color: #ff3860;
+            }
+
+            .input:disabled {
+                background-color: #17181c;
+            }
+        </style>
+        <section class="section">
+            <div class="container">
+                <h1 class="title">Dashboard</h1>
+                <hr>
+                <p class="subtitle">Logged in as: <%= user.userName %></p>
+                <form action="/logout" method="GET">
+                    <button class="button" type="submit">
+                        <span class="icon has-text-danger">
+                            <i class="fas fa-arrow-left"></i>
+                        </span>
+                        <span>Logout</span>
+                    </button>
+                </form>
+                <hr>
+                <p>• It's a good idea to VIP or MOD gdreqbot to avoid chat restrictions (e.g. followers-only and sub-only chat, slowmode, or others).</p>
+                <p>• If you later want to remove gdreqbot from your chat, use the <%= setData.prefix.value %>part command, or the button at the bottom of the page.</p>
+                <br>
+                <h1 class="title">Settings</h1>
+                <form class="box" id="settings" autocomplete="off">
+                    <input type="hidden" name="formType" value="settings">
+                    <div>
+                        <p class="title is-5">Prefix</p>
+                        <p class="subtitle is-6">The prefix used to call commands</p>
+                        <div class="input-container">
+                            <input class="input" type="text" value="<%= setData.prefix.value %>" name="prefix" id="required" data-default="<%= setData.prefix.defaultValue %>" required>
+                            <button class="button reset" type="button" <% if (setData.prefix.isDefault) { %> disabled <% } %>>Reset</button>
+                        </div>
+                    </div>
+                    <br>
+                    <div>
+                        <p class="title is-5">Max Levels Per User</p>
+                        <p class="subtitle is-6">The maximum amount of levels a user can have in the queue at the same time</p>
+                        <div class="input-container">
+                            <input class="input" type="number" min="1" value="<%= setData.max_levels_per_user.isDefault ? "" : setData.max_levels_per_user.value %>" name="max_levels_per_user" id="max_levels_per_user" data-default="">
+                            <button class="button reset" type="button" <% if (setData.max_levels_per_user.isDefault) { %> disabled <% } %>>Reset</button>
+                            <!-- <button class="button <%= setData.max_levels_per_user.isDefault ? "enable" : "disable" %>" type="button"><%= setData.max_levels_per_user.isDefault ? "Enable" : "Disable" %></button> -->
+                        </div>
+                    </div>
+                    <br>
+                    <div>
+                        <p class="title is-5">Max Queue Size</p>
+                        <p class="subtitle is-6">The maximum amount of levels the queue can hold</p>
+                        <div class="input-container">
+                            <input class="input" type="number" min="1" value="<%= setData.max_queue_size.isDefault ? "" : setData.max_queue_size.value %>" name="max_queue_size" id="max_queue_size" data-default="">
+                            <button class="button reset" type="button" <% if (setData.max_queue_size.isDefault) { %> disabled <% } %>>Reset</button>
+                        </div>
+                    </div>
+                    <br></br>
+                    <button class="button" type="submit">
+                        <span class="icon has-text-info">
+                            <i class="fas fa-save"></i>
+                        </span>
+                        <span>Save</span>
+                    </button>
+                </form>
+                <br>
+                <h1 class="title">Command Permissions</h1>
+                <form class="box" id="perms" autocomplete="off">
+                    <input type="hidden" name="formType" value="perms">
+                    <% for (let i = 0; i < cmdData.length; i++) { %>
+                    <div>
+                        <div style="float: left">
+                            <p class="title is-5"><%= setData.prefix.value + cmdData[i].name %></p>
+                            <p class="subtitle is-6"><%= cmdData[i].desc.replace("!", setData.prefix.value) %></p>
+                        </div>
+                        <div class="dropdown" style="float: right" data-default="<%= cmdData[i].defaultPerm %>">
+                            <div class="dropdown-trigger">
+                                <button class="button" aria-haspopup="true" aria-controls="dropdown-menu-<%= i %>">
+                                <span><%= cmdData[i].perm %></span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu" id="dropdown-menu-<%= i %>" role="menu">
+                                <div class="dropdown-content">
+                                    <% perms.forEach(perm => { %>
+                                    <a class="dropdown-item<% if (cmdData[i].perm == perm) { %> is-active<% } %>" data-value="<%= perm %>"><%= perm %></a>
+                                    <% }); %>
+                                </div>
+                            </div>
+                            <button class="button reset" type="button" <% if (cmdData[i].isDefault) { %> disabled <% } %>>Reset</button>
+                            <input type="hidden" id="dropdown<%= i %>-value" name="<%= cmdData[i].name %>" value="">
+                        </div>
+                    </div>
+                    <br>
+                    <hr>
+                    <% } %>
+                    <button class="button" type="submit">
+                        <span class="icon has-text-info">
+                            <i class="fas fa-save"></i>
+                        </span>
+                        <span>Save</span>
+                    </button>
+                </form>
+                <hr>
+                <form action="/dashboard/<%= user.userId %>/part" method="GET">
+                    <button class="button" type="submit">
+                        <span class="icon has-text-danger">
+                            <i class="fas fa-arrow-left"></i>
+                        </span>
+                        <span class="has-text-danger">Part</span>
+                    </button>
+                </form>
+                <p>Note: parting gdreqbot will also log you out and <strong>reset your settings!</strong></p>
+            </div>
+        </section>
+        <script>
+            let changes = false;
+            let isDefault = {};
+
+            async function sendData(form) {
+                let formData = new FormData(form);
+                let userId = "<%= user.userId %>";
+
+                try {
+                    let res = await fetch(`http://localhost:3000/dashboard/${userId}`, {
+                        method: "POST",
+                        body: formData
+                    });
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            function saveMsg(saveButton) {
+                let msg = document.createElement('span');
+
+                msg.classList.add('has-text-success', 'ml-2');
+                msg.innerText = 'Saved successfully!';
+
+                saveButton.insertAdjacentElement('afterend', msg);
+                setTimeout(() => msg.remove(), 2000);
+            }
+            
+            let settings = document.getElementById("settings");
+            settings.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => {
+                    let resetButton = input.closest('.input-container').querySelector('.reset');
+                    if (input.value != input.dataset.default) {
+                        resetButton.disabled = false;
+                        changes = true;
+                    } else {
+                        resetButton.disabled = true;
+                        changes = false;
+                    }
+                });
+            });
+
+            settings.querySelectorAll('.reset').forEach(resetButton => {
+                resetButton.addEventListener('click', evt => {
+                    evt.preventDefault();
+                    let input = resetButton.parentElement.querySelector('input');
+
+                    input.value = input.dataset.default;
+                    resetButton.disabled = true;
+
+                    changes = !isDefault[input.name];
+                });
+            });
+
+            settings.addEventListener("submit", evt => {
+                evt.preventDefault();
+                sendData(settings);
+
+                changes = false;
+
+                let saveButton = settings.querySelector('.button[type="submit"]');
+                saveMsg(saveButton);
+            });
+
+            let perms = document.getElementById("perms");
+            perms.addEventListener("submit", evt => {
+                evt.preventDefault();
+                sendData(perms);
+
+                changes = false;
+
+                let saveButton = perms.querySelector('.button[type="submit"]');
+                saveMsg(saveButton);
+            });
+
+            let dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach((dropdown, i) => {
+                let input = dropdown.querySelector(`input[type="hidden"]`);
+                let button = dropdown.querySelector('.dropdown-trigger button');
+                let resetButton = dropdown.querySelector('.reset');
+                let items = dropdown.querySelectorAll('.dropdown-item');
+
+                let defaultValue = dropdown.dataset.default;
+
+                function setValue(value) {
+                    input.value = value;
+                    button.innerHTML = `<span>${value}</span><span class="icon is-small"><i class="fas fa-angle-down" aria-hidden="true"></i></span>`;
+                    items.forEach(i => i.classList.toggle('is-active', i.getAttribute('data-value') == value));
+                }
+
+                resetButton.addEventListener('click', evt => {
+                    evt.preventDefault();
+                    setValue(defaultValue);
+                    resetButton.disabled = true;
+
+                    changes = !isDefault[`dropdown${i}`];
+                });
+
+                let trigger = dropdown.querySelector('.dropdown-trigger');
+                trigger.addEventListener('click', evt => {
+                    evt.stopPropagation();
+                    evt.preventDefault();
+                    
+                    dropdowns.forEach(other => {
+                        if (other != dropdown) {
+                            other.classList.remove('is-active');
+                        }
+                    });
+
+                    dropdown.classList.toggle('is-active');
+                });
+
+                items.forEach(item => {
+                    item.addEventListener('click', evt => {
+                        evt.preventDefault();
+
+                        setValue(item.getAttribute('data-value'));
+                        dropdown.classList.remove('is-active');
+
+                        if (input.value != defaultValue) {
+                            if (resetButton.disabled) resetButton.disabled = false;
+                            changes = true;
+                        }
+                    });
+                });
+            });
+
+            document.addEventListener('click', evt => {
+                dropdowns.forEach(dropdown => {
+                    if (!dropdown.contains(evt.target)) {
+                        dropdown.classList.remove('is-active');
+                    }
+                });
+            });
+
+            window.addEventListener('load', () => {
+                let settingsInputs = document.querySelectorAll('#settings input');
+                let permsInputs = document.querySelectorAll('#perms .dropdown');
+
+                settingsInputs.forEach(input => {
+                    isDefault[input.name] = input.value == input.dataset.default
+                });
+
+                permsInputs.forEach((dropdown, i) => {
+                    let resetButton = dropdown.querySelector('.reset');
+                    isDefault[`dropdown${i}`] = resetButton.disabled;
+                });
+            });
+
+            window.addEventListener('beforeunload', evt => {
+                if (changes) {
+                    evt.preventDefault();
+                    evt.returnValue = '';
+                }
+            });
+        </script>
+<%- include('components/footer') %>

@@ -139,7 +139,7 @@ client.onMessage(async (channel, user, text, msg) => {
 
     let isId = text.match(/\b\d{5,9}\b/);
 
-    if (!text.startsWith(config.prefix) && isId) {
+    if (!text.startsWith(sets.prefix ?? config.prefix) && isId && userPerms != PermLevels.BLACKLISTED) {
         let reqPerm = perms?.find(p => p.cmd == client.commands.get("req").config.name);
         if ((reqPerm?.perm || client.commands.get("req").config.permLevel) > userPerms) return;
 
@@ -181,9 +181,9 @@ client.onMessage(async (channel, user, text, msg) => {
         return;
     }
 
-    if (!text.startsWith(config.prefix)) return;
+    if (!text.startsWith(sets.prefix ?? config.prefix)) return;
 
-    let args = text.slice(config.prefix.length).trim().split(/ +/);
+    let args = text.slice(sets.prefix?.length ?? config.prefix.length).trim().split(/ +/);
     let cmdName = args.shift().toLowerCase();
     let cmd = client.commands.get(cmdName)
         || client.commands.values().find(c => c.config.aliases?.includes(cmdName));

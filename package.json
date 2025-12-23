@@ -1,6 +1,6 @@
 {
   "name": "gdreqbot",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Early stage Geometry Dash level requests",
   "main": "dist/core.js",
   "scripts": {
@@ -24,18 +24,28 @@
     "@twurple/auth": "^7.4.0",
     "@twurple/chat": "^7.4.0",
     "@twurple/easy-bot": "^7.4.0",
+    "body-parser": "^2.2.1",
     "chalk": "^4",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "moment": "^2.30.1",
     "moment-duration-format": "^2.3.2",
-    "superagent": "^10.2.3"
+    "multer": "^2.0.2",
+    "passport": "^0.7.0",
+    "passport-twitch-latest": "^1.0.0",
+    "superagent": "^10.2.3",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.5",
+    "@types/express-session": "^1.18.2",
     "@types/moment-duration-format": "^2.2.7",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.10.1",
+    "@types/passport": "^1.0.17",
+    "@types/passport-twitch-latest": "^1.0.5",
     "@types/superagent": "^8.1.9"
   }
 }
