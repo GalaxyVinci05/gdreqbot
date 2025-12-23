@@ -18,6 +18,7 @@ import { Levels } from "./datasets/levels";
 import { Perm } from "./datasets/perms";
 import Dashboard from "./server";
 import { User } from "./structs/user";
+import { Settings } from "./datasets/settings";
 
 const tokenData = JSON.parse(fs.readFileSync(`./tokens.${config.botId}.json`, "utf-8"));
 const authProvider = new RefreshingAuthProvider({
@@ -100,6 +101,7 @@ client.onMessage(async (channel, user, text, msg) => {
     let userPerms: PermLevels;
     let blacklist: Blacklist = client.db.load("blacklist", { channelId: msg.channelId });
     let levels: Levels = client.db.load("levels", { channelId: msg.channelId });
+    let sets: Settings = client.db.load("settings", { channelId: msg.channelId });
 
     if (msg.userInfo.userId == config.ownerId) userPerms = PermLevels.DEV;
     else if (msg.userInfo.isBroadcaster) userPerms = PermLevels.STREAMER;
@@ -111,7 +113,7 @@ client.onMessage(async (channel, user, text, msg) => {
 
     let isId = text.match(/\b\d{5,9}\b/);
 
-    if (!text.startsWith(config.prefix) && isId && userPerms != PermLevels.BLACKLISTED) {
+    if (!text.startsWith(sets.prefix ?? config.prefix) && isId && userPerms != PermLevels.BLACKLISTED) {
         let res = await client.req.addLevel(client, msg.channelId, { userId: msg.userInfo.userId, userName: msg.userInfo.userName }, isId[0]);
             
         switch (res.status) {
@@ -150,9 +152,9 @@ client.onMessage(async (channel, user, text, msg) => {
         return;
     }
 
-    if (!text.startsWith(config.prefix)) return;
+    if (!text.startsWith(sets.prefix ?? config.prefix)) return;
 
-    let args = text.slice(config.prefix.length).trim().split(/ +/);
+    let args = text.slice(sets.prefix?.length ?? config.prefix.length).trim().split(/ +/);
     let cmdName = args.shift().toLowerCase();
     let cmd = client.commands.get(cmdName)
         || client.commands.values().find(c => c.config.aliases?.includes(cmdName));

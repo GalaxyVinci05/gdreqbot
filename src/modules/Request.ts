@@ -174,6 +174,14 @@ class Request {
                 break;
             }
 
+            case "prefix": {
+                if (!value)
+                    return { status: ResCode.INVALID_VALUE };
+
+                sets.prefix = value;
+                break;
+            }
+
             case "max_levels_per_user": {
                 if (isNaN(parseInt(value)))
                     return { status: ResCode.INVALID_VALUE };

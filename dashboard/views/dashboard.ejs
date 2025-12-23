@@ -131,6 +131,7 @@
         </section>
         <script>
             let changes = false;
+            let isDefault = {};
 
             async function sendData(form) {
                 let formData = new FormData(form);
@@ -172,14 +173,14 @@
 
             settings.querySelectorAll('.reset').forEach(resetButton => {
                 resetButton.addEventListener('click', evt => {
-                console.log('shish')
                     evt.preventDefault();
                     let input = resetButton.parentElement.querySelector('input');
+                    console.log(isDefault[input.id])
 
                     input.value = input.dataset.default;
                     resetButton.disabled = true;
 
-                    changes = false;
+                    changes = !isDefault[input.id];
                 });
             });
 
@@ -205,7 +206,7 @@
             });
 
             let dropdowns = document.querySelectorAll('.dropdown');
-            dropdowns.forEach(dropdown => {
+            dropdowns.forEach((dropdown, i) => {
                 let input = dropdown.querySelector(`input[type="hidden"]`);
                 let button = dropdown.querySelector('.dropdown-trigger button');
                 let resetButton = dropdown.querySelector('.reset');
@@ -224,7 +225,7 @@
                     setValue(defaultValue);
                     resetButton.disabled = true;
 
-                    changes = false;
+                    changes = !isDefault[`dropdown${i}`];
                 });
 
                 let trigger = dropdown.querySelector('.dropdown-trigger');
@@ -248,9 +249,10 @@
                         setValue(item.getAttribute('data-value'));
                         dropdown.classList.remove('is-active');
 
-                        if (resetButton.disabled) resetButton.disabled = false;
-
-                        changes = true;
+                        if (input.value != defaultValue) {
+                            if (resetButton.disabled) resetButton.disabled = false;
+                            changes = true;
+                        }
                     });
                 });
             });
@@ -260,6 +262,20 @@
                     if (!dropdown.contains(evt.target)) {
                         dropdown.classList.remove('is-active');
                     }
+                });
+            });
+
+            window.addEventListener('load', () => {
+                let settingsInputs = document.querySelectorAll('#settings input');
+                let permsInputs = document.querySelectorAll('#perms .dropdown');
+
+                settingsInputs.forEach(input => {
+                    isDefault[input.id] = input.value == input.dataset.default
+                });
+
+                permsInputs.forEach((dropdown, i) => {
+                    let resetButton = dropdown.querySelector('.reset');
+                    isDefault[`dropdown${i}`] = resetButton.disabled;
                 });
             });
 
