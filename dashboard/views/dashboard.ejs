@@ -175,7 +175,6 @@
                 resetButton.addEventListener('click', evt => {
                     evt.preventDefault();
                     let input = resetButton.parentElement.querySelector('input');
-                    console.log(isDefault[input.id])
 
                     input.value = input.dataset.default;
                     resetButton.disabled = true;
