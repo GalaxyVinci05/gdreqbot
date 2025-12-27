@@ -161,6 +161,11 @@ client.onMessage(async (channel, user, text, msg) => {
                 break;
             }
 
+            case ResCode.FULL: {
+                client.say(channel, `Kappa The queue is full (max ${sets.max_queue_size} levels)`, { replyTo: msg });
+                break;
+            }
+
             case ResCode.DISABLED: {
                 client.say(channel, "Kappa Requests are disabled.", { replyTo: msg });
                 break;
