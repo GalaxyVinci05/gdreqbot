@@ -3,21 +3,19 @@ dotenv.config({ quiet: true });
 
 import express, { NextFunction, Request, Response } from "express";
 import session from "express-session";
-import passport, { serializeUser } from "passport";
+import passport from "passport";
 import { Strategy as twitchStrategy } from "passport-twitch-latest";
 import bodyParser from "body-parser";
 import { v4 as uuid } from "uuid";
 import path from 'path';
 import multer from "multer";
-import querystring from "querystring";
-import superagent, { PUT } from "superagent";
 import Gdreqbot, { channelsdb } from './core';
-import { getUserByToken } from "./apis/twitch";
 import { User } from "./structs/user";
 import { Settings } from "./datasets/settings";
-import { Perm, Perms } from "./datasets/perms";
+import { Perm } from "./datasets/perms";
 import PermLevels from "./structs/PermLevels";
 import BaseCommand from "./structs/BaseCommand";
+import { PUT } from "superagent";
 
 const server = express();
 const port = process.env.PORT || 80;
@@ -142,7 +140,22 @@ export = class {
         });
 
         server.get('/commands', (req, res) => {
-            renderView(req, res, 'commands');
+            res.render('commands', {
+                cmds: client.commands.values()
+                    .filter(cmd => cmd.config.permLevel < PermLevels.DEV)
+                    .map(cmd => {
+                        return {
+                            name: cmd.config.name,
+                            desc: cmd.config.description,
+                            args: cmd.config.args,
+                            aliases: cmd.config.aliases,
+                            permLevel: this.normalize(PermLevels[cmd.config.permLevel]),
+                            supportsPrivilege: cmd.config.supportsPrivilege,
+                            privilegeDesc: cmd.config.privilegeDesc,
+                            privilegeArgs: cmd.config.privilegeArgs
+                        };
+                })
+            });
         });
 
         server.get('/terms-of-service', (req, res) => {
