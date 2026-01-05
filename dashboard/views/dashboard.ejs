@@ -190,55 +190,60 @@
                 </form>
                 <br></br>
                 <h1 class="title">Blacklist</h1>
-                <form class="box" id="blacklist" autocomplete="off">
-                    <input type="hidden" name="formType" value="settings">
-                    <div>
-                        <p class="title is-5">Users</p>
-                        <p class="subtitle is-6">Type the Twitch username and click "Add". You can add multiple ones separated by a ,</p>
-                        <div class="input-container">
-                            <input class="input" type="text" value="<%= setData.prefix.value %>" name="prefix" id="required" data-default="<%= setData.prefix.defaultValue %>" required>
-                            <button class="button add" type="button" <% if (setData.prefix.isDefault) { %> disabled <% } %>>Add</button>
-                        </div>
-                        <br>
+                <div class="box">
+                    <form id="blacklist-users" autocomplete="off">
+                        <input type="hidden" name="formType" value="blacklist-users">
                         <div>
-                            <p>Added Users:</p>
-                            <hr>
-                            <ul class="has-text-danger">
-                            <% bl.users.forEach(user => { %>
-                                <li class="input-container">
-                                    <p>• <%= user.userName %></p>
-                                    <button class="button remove is-small" type="button">Remove</button>
-                                </li>
-                                <hr>
-                            <% }); %>
-                            </ul>
+                            <p class="title is-5">Users</p>
+                            <p class="subtitle is-6">Type the Twitch username and click "Add". You can add multiple ones separated by a ,</p>
+                            <div class="input-container">
+                                <input class="input" type="text" name="users", placeholder="user1, user2, ...">
+                                <button class="button add" type="submit">Add</button>
+                            </div>
                         </div>
-                    </div>
+                    </form>
                     <br>
                     <div>
-                        <p class="title is-5">Levels</p>
-                        <p class="subtitle is-6">Type the GD level name or ID and click "Add". You can add multiple ones separated by a ,</p>
-                        <div class="input-container">
-                            <input class="input" value="<%= setData.max_levels_per_user.isDefault ? "" : setData.max_levels_per_user.value %>" name="max_levels_per_user" id="max_levels_per_user" data-default="">
-                            <button class="button add" type="button" <% if (setData.max_levels_per_user.isDefault) { %> disabled <% } %>>Add</button>
-                        </div>
-                        <br>
-                        <div>
-                            <p>Added Levels:</p>
+                        <p>Added Users:</p>
+                        <hr>
+                        <ul class="has-text-danger">
+                        <% bl.users.forEach(user => { %>
+                            <li class="input-container">
+                                <p>• <%= user.userName %></p>
+                                <button class="button remove is-small" type="button" data-type="users" data-id="<%= user.userId %>">Remove</button>
+                            </li>
                             <hr>
-                            <ul class="has-text-danger">
-                            <% bl.levels.forEach(level => { %>
-                                <li class="input-container">
-                                    <p>• '<%= level.name %>' (<%= level.id %>) by <%= level.creator %></p>
-                                    <button class="button remove is-small" type="button">Remove</button>
-                                </li>
-                                <hr>
-                            <% }); %>
-                            </ul>
+                        <% }); %>
+                        </ul>
+                    </div>
+                    <br>
+                    <form id="blacklist-levels" autocomplete="off">
+                        <input type="hidden" name="formType" value="blacklist-levels">
+                        <div>
+                            <p class="title is-5">Levels</p>
+                            <p class="subtitle is-6">Type the GD level name or ID and click "Add". You can add multiple ones separated by a ,</p>
+                            <div class="input-container">
+                                <input class="input" type="text" name="levels" placeholder="level name1, 12345678, ...">
+                                <button class="button add" type="button" data-type="levels">Add</button>
+                            </div>
                         </div>
+                    </form>
+                    <br>
+                    <div>
+                        <p>Added Levels:</p>
+                        <hr>
+                        <ul class="has-text-danger">
+                        <% bl.levels.forEach(level => { %>
+                            <li class="input-container">
+                                <p>• '<%= level.name %>' (<%= level.id %>) by <%= level.creator %></p>
+                                <button class="button remove is-small" type="button" data-type="levels" data-id="<%= level.id %>">Remove</button>
+                            </li>
+                            <hr>
+                        <% }); %>
+                        </ul>
                     </div>
                     <br></br>
-                </form>
+                </div>
                 <hr>
                 <form action="/dashboard/<%= user.userId %>/part" method="GET">
                     <button class="button" type="submit">
@@ -254,10 +259,10 @@
         <script>
             let changes = false;
             let isDefault = {};
+            let userId = "<%= user.userId %>";
 
             async function sendData(form) {
                 let formData = new FormData(form);
-                let userId = "<%= user.userId %>";
 
                 try {
                     let res = await fetch(`http://localhost:3000/dashboard/${userId}`, {
@@ -375,6 +380,32 @@
                             changes = true;
                         }
                     });
+                });
+            });
+
+            let blacklist = document.getElementById("blacklist");
+            blacklist.querySelectorAll(".add").forEach(button => {
+                button.addEventListener("click", async () => {
+                    let input = button.parentElement.querySelector("input");
+
+                    if (!input.value.trim()) return;
+
+                    let formData = new FormData();
+                    formData.append("formType", "blacklist");
+                    formData.append("action", "add");
+                    formData.append("type", button.dataset.type);
+                    formData.append("value", input.value);
+
+                    try {
+                        await fetch(`http://localhost:3000/dashboard/${userId}`, {
+                            method: "POST",
+                            body: formData
+                        });
+
+                        window.location.reload();
+                    } catch (e) {
+                        console.error(e);
+                    }
                 });
             });
 

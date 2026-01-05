@@ -266,6 +266,11 @@ export = class {
                     break;
                 }
 
+                case "blacklist": {
+                    console.log(req.body);
+                    break;
+                }
+
                 default: {
                     client.logger.error("what???");
                     break;
