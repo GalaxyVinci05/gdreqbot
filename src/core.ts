@@ -130,6 +130,9 @@ client.onMessage(async (channel, user, text, msg) => {
     let blacklist: Blacklist = client.db.load("blacklist", { channelId: msg.channelId });
     let sets: Settings = client.db.load("settings", { channelId: msg.channelId });
     let perms: Perm[] = client.db.load("perms", { channelId: msg.channelId }).perms;
+    let globalUserBl: string[] = client.blacklist.get("users");
+
+    if (globalUserBl?.includes(msg.userInfo.userId)) return;
 
     if (msg.userInfo.userId == config.ownerId) userPerms = PermLevels.DEV;
     else if (msg.userInfo.isBroadcaster) userPerms = PermLevels.STREAMER;

@@ -58,21 +58,6 @@ export = class BlacklistCommand extends BaseCommand {
             }
 
             case "remove": {
-                //let userName = args[1].replace(/\s*@\s*/g, '').toLowerCase();
-                //let rawUser = await getUser(userName, "login");
-
-                //if (!rawUser) return client.say(channel, "An error occurred fetching user data. Please try again.", { replyTo: msg });
-                //else if (!rawUser.data.length) return client.say(channel, "That user doesn't exist.", { replyTo: msg });
-
-                //let idx = blacklist.users.findIndex(u => u.userId == rawUser.data[0].id);
-                //if (idx == -1) return client.say(channel, "That user isn't blacklisted.", { replyTo: msg });
-
-                //blacklist.users.splice(idx, 1);
-                //await client.db.save("blacklist", { channelId: msg.channelId }, { users: blacklist.users });
-
-                //client.say(channel, `Removed ${userName} from the blacklist.`, { replyTo: msg });
-
-
                 let query = args[0] == "user" ? args[2].replace(/\s*@\s*/g, '').toLowerCase() : args[2];
                 let rawData = args[0] == "user" ? await getUser(query, "login") : await getLevel(query);
 

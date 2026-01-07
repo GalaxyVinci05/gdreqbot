@@ -198,7 +198,7 @@
                             <p class="subtitle is-6">Type the Twitch username and click "Add". You can add multiple ones separated by a ,</p>
                             <div class="input-container">
                                 <input class="input" type="text" name="users", placeholder="user1, user2, ...">
-                                <button class="button add" type="submit">Add</button>
+                                <button class="button add" type="submit" disabled>Add</button>
                             </div>
                         </div>
                     </form>
@@ -224,7 +224,7 @@
                             <p class="subtitle is-6">Type the GD level name or ID and click "Add". You can add multiple ones separated by a ,</p>
                             <div class="input-container">
                                 <input class="input" type="text" name="levels" placeholder="level name1, 12345678, ...">
-                                <button class="button add" type="submit">Add</button>
+                                <button class="button add" type="submit" disabled>Add</button>
                             </div>
                         </div>
                     </form>
@@ -283,7 +283,31 @@
                 saveButton.insertAdjacentElement('afterend', msg);
                 setTimeout(() => msg.remove(), 2000);
             }
-            
+
+            function errMsg(form, text, type = "danger") {
+                let msg = form.querySelector('.form-message');
+                if (!msg) {
+                    msg = document.createElement('p');
+                    msg.className = 'form-message mt-2';
+                    form.appendChild(msg);
+                }
+
+                msg.className = `form-message mt-2 has-text-${type}`;
+                msg.innerText = text;
+            }
+
+            function toggleButton(form) {
+                let input = form.querySelector("input[type='text']");
+                let button = form.querySelector(".add");
+
+                function update() {
+                    button.disabled = input.value.trim().length == 0;
+                }
+
+                update();
+                input.addEventListener("input", update);
+            }
+
             let settings = document.getElementById("settings");
             settings.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', () => {
@@ -388,12 +412,21 @@
                 evt.preventDefault();
 
                 let formData = new FormData(userBl);
+                formData.append("action", "add");
+
+                let button = userBl.querySelector(".add");
+                button.disabled = true;
 
                 try {
-                    await fetch(`http://localhost:3000/dashboard/${userId}`, {
+                    let res = await fetch(`http://localhost:3000/dashboard/${userId}`, {
                         method: "POST",
                         body: formData
                     });
+
+                    let data = await res.json();
+
+                    if (!res.ok) 
+                        return errMsg(userBl, `Invalid users: ${data.invalid.join(", ")}`);
 
                     window.location.reload();
                 } catch (e) {
@@ -406,17 +439,51 @@
                 evt.preventDefault();
 
                 let formData = new FormData(levelBl);
+                formData.append("action", "add");
+
+                let button = levelBl.querySelector(".add");
+                button.disabled = true;
 
                 try {
-                    await fetch(`http://localhost:3000/dashboard/${userId}`, {
+                    let res = await fetch(`http://localhost:3000/dashboard/${userId}`, {
                         method: "POST",
                         body: formData
                     });
+
+                    let data = await res.json();
+
+                    if (!res.ok) 
+                        return errMsg(levelBl, `Invalid levels: ${data.invalid.join(", ")}`);
+
 
                     window.location.reload();
                 } catch (e) {
                     console.error(e);
                 }
+            });
+
+            toggleButton(userBl);
+            toggleButton(levelBl);
+
+            document.querySelectorAll(".remove").forEach(button => {
+                button.addEventListener("click", async () => {
+                    let formData = new FormData();
+
+                    formData.append("formType", `blacklist-${button.dataset.type}`);
+                    formData.append("action", "remove");
+                    formData.append("id", button.dataset.id);
+
+                    try {
+                        await fetch(`http://localhost:3000/dashboard/${userId}`, {
+                            method: "POST",
+                            body: formData
+                        });
+
+                        window.location.reload();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                });
             });
 
             document.addEventListener('click', evt => {

@@ -17,7 +17,7 @@ class Request {
     async addLevel(client: Gdreqbot, channelId: string, user: User, query: string) {
         let sets: Settings = client.db.load("settings", { channelId });
         let blacklisted: LevelData[] = client.db.load("blacklist", { channelId })?.levels;
-        let bl: string[] = client.blacklist.get("blacklist");
+        let bl: string[] = client.blacklist.get("levels");
         if (!sets.req_enabled) return { status: ResCode.DISABLED };
 
         try {
