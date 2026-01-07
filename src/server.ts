@@ -160,8 +160,8 @@ export = class {
 
             let totalReq = 0;
             channelsdb.get("channels").forEach((channel: User) => {
-                let data: LevelData[] = client.db.load("levels", { channelId: channel.userId }).levels;
-                data.forEach(() => totalReq++);
+                let data: LevelData[] = client.db.load("levels", { channelId: channel.userId })?.levels;
+                if (data) data.forEach(() => totalReq++);
             });
 
             res.render('stats', {
@@ -389,7 +389,9 @@ export = class {
 
                                 let data = client.req.parseLevel(raw);
 
-                                if (!levelBl.find(l => l.id == data.id))
+                                if (!levelBl)
+                                    levelBl = [data];
+                                else if (!levelBl.find(l => l.id == data.id))
                                     levelBl.push(data);
                             }
 
@@ -397,6 +399,9 @@ export = class {
                         }
 
                         case "remove": {
+                            if (!levelBl)
+                                break;
+
                             let idx = levelBl.findIndex(l => l.id == req.body.id);
                             if (idx == -1) return res.status(200).json({ success: true });
 
