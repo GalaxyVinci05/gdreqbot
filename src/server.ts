@@ -158,6 +158,12 @@ export = class {
             let nodeVersion = process.version;
             let pkgVersion = require('../package.json').version;
 
+            let totalReq = 0;
+            channelsdb.get("channels").forEach((channel: User) => {
+                let data: LevelData[] = client.db.load("levels", { channelId: channel.userId }).levels;
+                data.forEach(() => totalReq++);
+            });
+
             res.render('stats', {
                 memUsage,
                 dbUsage,
@@ -166,7 +172,8 @@ export = class {
                 twVersion,
                 exprVersion,
                 nodeVersion,
-                pkgVersion
+                pkgVersion,
+                totalReq
             });
         });
 
@@ -203,6 +210,10 @@ export = class {
 
         server.get('/updates', (req, res) => {
             renderView(req, res, 'updates');
+        });
+
+        server.get('/versions', (req, res) => {
+            renderView(req, res, 'versions');
         });
 
         server.get('/dashboard', (req, res) => {
@@ -335,6 +346,11 @@ export = class {
                             userBl.splice(idx, 1);
                             break;
                         }
+
+                        case "clear": {
+                            userBl = [];
+                            break;
+                        }
                     }
 
                     await client.db.save("blacklist", { channelId: userId }, { users: userBl });
@@ -385,6 +401,11 @@ export = class {
                             if (idx == -1) return res.status(200).json({ success: true });
 
                             levelBl.splice(idx, 1);
+                            break;
+                        }
+
+                        case "clear": {
+                            levelBl = [];
                             break;
                         }
                     }
