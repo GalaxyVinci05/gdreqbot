@@ -48,7 +48,7 @@ export = class RemoveCommand extends BaseCommand {
             }
 
             case ResCode.ERROR: {
-                client.say(channel, "An error occurred. If the issue persists, please contact the developer.", { replyTo: msg });
+                client.say(channel, "An error occurred, please try again. (If the issue persists, please contact the developer)", { replyTo: msg });
                 break;
             }
 
