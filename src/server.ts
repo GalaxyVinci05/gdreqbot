@@ -68,9 +68,9 @@ export = class {
                 let channels: User[] = channelsdb.get("channels");
                 let channel: User = channels.find(c => c.userId == channelId);
 
-                if (!channel) {
-                    await client.join(channelName);
+                await client.join(channelName);
 
+                if (!channel) {
                     // push to channels db
                     channels.push({ userId: channelId, userName: channelName });
                     await channelsdb.set("channels", channels);
@@ -83,7 +83,8 @@ export = class {
                     channels[idx].userName = channelName;
 
                     await channelsdb.set("channels", channels);
-                    await client.join(channelName);
+                } else {
+                    client.logger.log(`Authenticated: ${channelName}`);
                 }
 
                 let user: User = {
