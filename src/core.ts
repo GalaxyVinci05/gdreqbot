@@ -134,6 +134,8 @@ client.onMessage(async (channel, user, text, msg) => {
     else if (!blacklist.users.find(u => u.userId == msg.userInfo.userId)) userPerms = PermLevels.USER;
     else userPerms = PermLevels.BLACKLISTED;
 
+    if (text.trim() == "@gdreqbot" && sets?.prefix != client.config.prefix) return client.say(channel, `Prefix is: ${sets.prefix}`, { replyTo: msg });
+
     let isId = text.match(/\b\d{5,9}\b/);
 
     if (!text.startsWith(sets.prefix ?? config.prefix) && isId && userPerms != PermLevels.BLACKLISTED) {
