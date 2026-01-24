@@ -29,7 +29,7 @@ const hostname = process.env.HOSTNAME || 'localhost';
 
 export = class {
     async run(client: Gdreqbot) {
-        server.use('/public', express.static(path.resolve(__dirname, '../dashboard/public')));
+        server.use('/public', express.static(path.resolve(__dirname, '../web/public')));
         server.use(express.json());
         server.use(express.urlencoded({ extended: false }));
         server.use(
@@ -45,7 +45,7 @@ export = class {
         server.use(passport.initialize());
         server.use(passport.session());
         server.use(bodyParser.json());
-        server.set('views', path.join(__dirname, '../dashboard/views'));
+        server.set('views', path.join(__dirname, '../web/views'));
 
         server.set('view engine', 'ejs');
 
@@ -113,7 +113,7 @@ export = class {
                 bot: client,
                 path: req.path,
             };
-            res.render(path.resolve(`./dashboard/views/${view}`), Object.assign(baseData, data));
+            res.render(path.resolve(`./web/views/${view}`), Object.assign(baseData, data));
         };
 
         server.get('/', (req, res) => {
@@ -219,12 +219,28 @@ export = class {
 
         server.get('/dashboard', (req, res) => {
             if (req.isAuthenticated())
-                return res.redirect(`/dashboard/${(req.user as User).userId}`);
+                return res.redirect(`/dashboard/${(req.user as User).userId}/requests`);
 
             res.redirect('/auth');
         });
 
-        server.get('/dashboard/:user', this.checkAuth, async (req, res) => {
+        server.get('/dashboard/:user/requests', this.checkAuth, async (req, res) => {
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
+
+            await client.db.setDefault({ channelId: userId, channelName: userName });
+
+            if (userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+
+            res.render('dashboard/requests', {
+                isAuthenticated: true,
+                user: req.user,
+                page: "req"
+            });
+        });
+
+        server.get('/dashboard/:user/settings', this.checkAuth, async (req, res) => {
             let userId = (req.user as User).userId;
             let userName = (req.user as User).userName;
 
@@ -259,17 +275,18 @@ export = class {
             let permLiterals = Object.keys(PermLevels).filter(k => isNaN(Number(k)));
             permLiterals.pop();
 
-            res.render('dashboard', {
+            res.render('dashboard/settings', {
                 isAuthenticated: true,
                 user: req.user,
                 setData,
                 cmdData,
                 perms: permLiterals.map(p => this.normalize(p)),
-                bl
+                bl,
+                page: "set"
             });
         });
 
-        server.post('/dashboard/:user', this.checkAuth, multer().none(), async (req, res) => {
+        server.post('/dashboard/:user/settings', this.checkAuth, multer().none(), async (req, res) => {
             let userId = (req.user as User).userId;
             let userName = (req.user as User).userName;
 

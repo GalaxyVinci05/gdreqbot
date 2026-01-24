@@ -1,0 +1,93 @@
+<%- include('../components/header') %>
+        <style>
+            .input-container {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .reset {
+                margin-left: 10px;
+                color: #ff3860;
+                border: 1px solid #ff3860;
+            }
+
+            .reset:hover:enabled {
+                background-color: #ff3860;
+                color: white;
+                border-color: #ff3860;
+            }
+
+            .reset:hover:disabled {
+                color: #ff3860;
+            }
+
+            .enable {
+                margin-left: 10px;
+                color: #1ca64c;
+                border: 1px solid #1ca64c;
+            }
+
+            .enable:hover {
+                background-color: #1ca64c;
+                color: white;
+                border-color: #1ca64c;
+            }
+
+            .disable {
+                margin-left: 10px;
+                color: #ff3860;
+                border: 1px solid #ff3860;
+            }
+
+            .disable:hover {
+                background-color: #ff3860;
+                color: white;
+                border-color: #ff3860;
+            }
+
+            .input:disabled {
+                background-color: #17181c;
+            }
+
+            .add {
+                margin-left: 10px;
+                color: #1ca64c;
+                border: 1px solid #1ca64c;
+            }
+
+            .add:hover:enabled {
+                background-color: #1ca64c;
+                color: white;
+                border-color: #1ca64c;
+            }
+
+            .add:hover:disabled {
+                color: #1ca64c;
+            }
+
+            .remove {
+                margin-left: 10px;
+                color: #ff3860;
+                border: 1px solid #ff3860;
+            }
+
+            .remove:hover:enabled {
+                background-color: #ff3860;
+                color: white;
+                border-color: #ff3860;
+            }
+
+            .remove:hover:disabled {
+                color: #ff3860;
+            }
+        </style>
+        <section class="section">
+            <div class="container">
+                <h1 class="title">Dashboard</h1>
+                <hr>
+            </div>
+        </section>
+<%- include('../components/footer') %>
+<%- include('components/sidebar') %>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <style>
+        .sidebar .menu {
+            padding-top: 30px;
+            flex: 1;
+        }
+        .sidebar .menu li a {
+            text-decoration: none;
+            padding: 10px;
+        }
+        .sidebar .menu li a:hover {
+            background-color: #121212;
+        }
+        .sidebar .menu-label {
+            padding-left: 20px;
+        }
+        .sidebar footer {
+            padding: 20px;
+            color: #fff;
+            word-wrap: break-word;
+        }
+        .sidebar .menu li a.is-active {
+            background-color: #1CA64C;
+        }
+    </style>
+
+    <aside class="sidebar">
+        <div class="menu">
+            <p class="menu-label">Dashboard</p>
+            <ul class="menu-list">
+                <li><a href="/dashboard/<%= user.userId %>/requests" class="<%= page == "req" ? "is-active" : "" %>">
+                    <span class="icon">
+                        <i class="fas fa-arrow-right"></i>
+                    </span>
+                    <span class="title is-6"><strong>Requests</strong></span>
+                </a></li>
+                <li><a href="/dashboard/<%= user.userId %>/settings" class="<%= page == "set" ? "is-active" : "" %>">
+                    <span class="icon">
+                        <i class="fas fa-arrow-right"></i>
+                    </span>
+                    <span class="title is-6"><strong>Settings</strong></span>
+                </a></li>
+            </ul>
+        </div>
+        <button class="sidebar-toggle" aria-label="Toggle sidebar">
+            <span class="icon">
+                <i class="fas fa-angle-left"></i>
+            </span>
+        </button>
+        <footer>
+            <hr>
+            <p class="subtitle is-6">Logged in as: <%= user.userName %></p>
+                <form action="/logout" method="GET">
+                    <button class="button" type="submit">
+                        <span class="icon has-text-danger">
+                            <i class="fas fa-arrow-left"></i>
+                        </span>
+                        <span>Logout</span>
+                    </button>
+                </form>
+        </footer>
+    </aside>
+    <script>
+        let toggle = document.querySelector(".sidebar-toggle");
+        let { body } = document;
+
+        toggle?.addEventListener('click', () => {
+            body.classList.toggle('sidebar-collapsed');
+        });
+    </script>
+</html>
