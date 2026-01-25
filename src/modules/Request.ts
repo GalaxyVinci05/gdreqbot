@@ -5,16 +5,17 @@ import { Settings } from "../datasets/settings";
 import * as gd from "../apis/gd";
 
 class Request {
-    parseLevel(raw: string, user?: User): LevelData {
+    parseLevel(raw: string, user?: User, notes?: string): LevelData {
         return {
             name: raw.split(":")[3],
             creator: raw.split("#")[1].split(":")[1],
             id: raw.split(":")[1],
-            user: user ?? null
+            user: user ?? null,
+            notes: notes ?? null
         };
     }
 
-    async addLevel(client: Gdreqbot, channelId: string, user: User, query: string) {
+    async addLevel(client: Gdreqbot, channelId: string, user: User, query: string, notes?: string) {
         let sets: Settings = client.db.load("settings", { channelId });
         let blacklisted: LevelData[] = client.db.load("blacklist", { channelId })?.levels;
         let bl: string[] = client.blacklist.get("levels");
@@ -26,7 +27,7 @@ class Request {
             if (!raw) return { status: ResCode.ERROR };
             else if (raw == "-1") return { status: ResCode.NOT_FOUND };
 
-            let newLvl = this.parseLevel(raw, user);
+            let newLvl = this.parseLevel(raw, user, notes);
             if (bl?.length && bl.includes(newLvl.id))
                 return { status: ResCode.GLOBAL_BL };
             else if (blacklisted?.find(l => l.id == newLvl.id))

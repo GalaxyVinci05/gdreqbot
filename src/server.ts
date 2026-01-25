@@ -233,9 +233,14 @@ export = class {
             if (userId != req.params.user)
                 return res.status(403).send('Unauthorized');
 
+            let levels: LevelData[] = client.db.load("levels", { channelId: userId }).levels;
+            let sets: Settings = client.db.load("settings", { channelId: userId });
+
             res.render('dashboard/requests', {
                 isAuthenticated: true,
                 user: req.user,
+                levels,
+                setData: this.getSettings(sets),
                 page: "req"
             });
         });

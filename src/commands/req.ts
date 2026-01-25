@@ -20,7 +20,10 @@ export = class ReqCommand extends BaseCommand {
         if (!args.length)
             return client.say(channel, "Kappa You need to specify a query.", { replyTo: msg });
 
-        let res = await client.req.addLevel(client, msg.channelId, { userId: msg.userInfo.userId, userName: msg.userInfo.userName }, args[1] == "idreq" ? args[0] : args.join(" "));
+        let res = await client.req.addLevel(client, msg.channelId, { userId: msg.userInfo.userId, userName: msg.userInfo.userName },
+            args[1] == "idreq" ? args[0] : args.join(" "),
+            args[1] == "idreq" ? args[2] : null
+        );
         let sets: Settings = client.db.load("settings", { channelId: msg.channelId });
 
         switch (res.status) {

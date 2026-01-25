@@ -85,7 +85,7 @@
         </style>
         <section class="section">
             <div class="container">
-                <h1 class="title">Dashboard</h1>
+                <h1 class="title">Configuration</h1>
                 <hr>
                 <div class="has-text-info">
                     <span class="icon">
@@ -274,7 +274,7 @@
                 let formData = new FormData(form);
 
                 try {
-                    let res = await fetch(`${url}/dashboard/${userId}`, {
+                    let res = await fetch(`${url}/dashboard/${userId}/settings`, {
                         method: "POST",
                         body: formData
                     });
@@ -427,7 +427,7 @@
                 button.disabled = true;
 
                 try {
-                    let res = await fetch(`${url}/dashboard/${userId}`, {
+                    let res = await fetch(`${url}/dashboard/${userId}/settings`, {
                         method: "POST",
                         body: formData
                     });
@@ -454,7 +454,7 @@
                 button.disabled = true;
 
                 try {
-                    let res = await fetch(`${url}/dashboard/${userId}`, {
+                    let res = await fetch(`${url}/dashboard/${userId}/settings`, {
                         method: "POST",
                         body: formData
                     });
@@ -483,7 +483,7 @@
                     formData.append("id", button.dataset.id);
 
                     try {
-                        await fetch(`${url}/dashboard/${userId}`, {
+                        await fetch(`${url}/dashboard/${userId}/settings`, {
                             method: "POST",
                             body: formData
                         });
@@ -503,7 +503,7 @@
                     formData.append("action", "clear");
 
                     try {
-                        await fetch(`${url}/dashboard/${userId}`, {
+                        await fetch(`${url}/dashboard/${userId}/settings`, {
                             method: "POST",
                             body: formData
                         });

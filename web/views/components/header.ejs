@@ -32,19 +32,6 @@
                 $(".modal").toggleClass("is-active");
             });
         });
-
-        let lastScroll = 0;
-
-        window.addEventListener("scroll", () => {
-            let scroll = window.scrollY;
-
-            if (scroll > lastScroll && scroll > 80)
-                document.body.classList.add("navbar-hidden");
-            else
-                document.body.classList.remove("navbar-hidden");
-
-            lastScroll = scroll;
-        });
     </script>
     <title>gdreqbot</title>
 </head>
@@ -121,5 +108,41 @@
         </div>
     </nav>
 <br></br>
+<script>
+    let { body } = document;
+    let hidden = localStorage.getItem("navbar") == "hidden";
+
+    if (hidden) {
+        body.classList.add("navbar-hidden");
+    } else {
+        body.classList.remove("navbar-hidden");
+    }
+
+    let step = false;
+
+    window.addEventListener("scroll", () => {
+        if (!step) {
+            window.requestAnimationFrame(() => {
+                let lastScroll = localStorage.getItem("lastScroll");
+                let scroll = window.scrollY;
+
+                if (scroll > lastScroll && scroll > 80 && !hidden) {
+                    hidden = true;
+                    body.classList.add("navbar-hidden");
+                    localStorage.setItem("navbar", "hidden");
+                } else if (scroll < lastScroll && hidden) {
+                    hidden = false;
+                    body.classList.remove("navbar-hidden");
+                    localStorage.setItem("navbar", "visible");
+                }
+
+                localStorage.setItem("lastScroll", scroll);
+                step = false;
+            });
+        }
+
+        step = true;
+    });
+</script>
 </body>
 </html>

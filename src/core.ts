@@ -143,7 +143,8 @@ client.onMessage(async (channel, user, text, msg) => {
         if ((reqPerm?.perm || client.commands.get("req").config.permLevel) > userPerms) return;
 
         try {
-            await client.commands.get("req").run(client, msg, channel, [isId[0], "idreq"]);  // change args in the future cause stupid
+            let notes = text.replace(isId[0], "").replaceAll(/\s+/g, " ");
+            await client.commands.get("req").run(client, msg, channel, [isId[0], "idreq", notes.length > 1 ? notes : null]);  // change args in the future cause stupid
         } catch (e) {
             client.say(channel, "An error occurred running command: req. If the issue persists, please contact the developer.", { replyTo: msg });
             console.error(e);
