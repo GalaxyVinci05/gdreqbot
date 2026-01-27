@@ -3,6 +3,7 @@ import Gdreqbot from "../core";
 import PermLevels from "./PermLevels";
 
 class BaseCommand {
+    info: Info;
     config: Config;
 
     constructor({
@@ -18,19 +19,23 @@ class BaseCommand {
         permLevel = PermLevels.USER,
         supportsPrivilege = false
     }) {
-        this.config = { name, description, category, privilegeDesc, args, privilegeArgs, aliases, cooldown, enabled, permLevel, supportsPrivilege };
+        this.info = { name, description, category, privilegeDesc, args, privilegeArgs };
+        this.config = { aliases, cooldown, enabled, permLevel, supportsPrivilege };
     }
 
-    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args?: string[], userPerms?: PermLevels, privilegeMode?: boolean) {}
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args?: string[], opts?: { userPerms?: PermLevels, privilegeMode?: boolean, auto?: boolean }) {}
 }
 
-interface Config {
+interface Info {
     name: string;
     description?: string;
     category?: string;
     privilegeDesc?: string;
     args?: string;
     privilegeArgs?: string;
+}
+
+interface Config {
     aliases?: string[];
     cooldown?: number;
     enabled?: boolean;

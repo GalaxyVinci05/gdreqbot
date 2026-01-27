@@ -120,6 +120,7 @@
         <section class="section">
             <div class="container">
                 <h1 class="title">Level Requests (<strong class="has-text-primary">BETA</strong>)</h1>
+                <% if (!hide_note) { %>
                 <hr>
                 <div class="has-text-info">
                     <span class="icon">
@@ -134,13 +135,14 @@
                     </div>
                     <br>
                     <p style="margin-left: 10px">If you've read and understood, click the button below to hide this text forever (a very long time):</p>
-                    <button class="button is-small has-text-info" style="margin-left: 20px; margin-top: 10px">Hide</button>
+                    <button class="button is-small has-text-info" style="margin-left: 20px; margin-top: 10px" type="button" id="hide">Hide</button>
                 </div>
+                <% } %>
                 <hr>
                 <div class="container">
                     <div class="box panel">
                         <div>
-                            <p class="subtitle" style="float: left">
+                            <p class="subtitle">
                                 <span class="icon has-text-info" style="margin-right: 5px">
                                     <i class="fas fa-envelope"></i>
                                 </span>
@@ -155,7 +157,7 @@
                     </div>
                     <div class="box panel">
                         <div>
-                            <p class="subtitle" style="float: left">
+                            <p class="subtitle">
                                 <span class="icon has-text-danger" style="margin-right: 5px">
                                         <i class="fas fa-dice"></i>
                                 </span>
@@ -170,15 +172,44 @@
                     </div>
                     <div class="box panel">
                         <div>
-                            <button class="icon-button next toggle-requests has-text-link" style="float: right; margin-left: 5px">
-                                <span class="icon">
-                                    <i class="fas fa-forward"></i>
+                            <p class="subtitle">
+                                <span class="icon" style="margin-right: 5px">
+                                        <i class="fas fa-volume-mute"></i>
                                 </span>
-                            </button>
+                                Silent Mode: <strong class="has-text-success">ON</strong>
+                                <button class="icon-button toggle-on toggle-requests" style="float: right; margin-left: 20px">
+                                    <span class="icon">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </span>
+                                </button>
+                            </p>
                         </div>
                     </div>
                 </div>
-                <br></br>
+            </div>
+        </section>
+        <br>
+
+        <section class="section">
+            <div class="container">
+                <div class="button panel">
+                    <div>
+                        <button class="icon-button clear toggle-requests has-text-danger" style="margin-left: 5px; font-size: 24px">
+                            <span class="icon">
+                                <i class="fas fa-broom"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                <div class="button panel">
+                    <div>
+                        <button class="icon-button next toggle-requests has-text-link" style="margin-left: 5px">
+                            <span class="icon">
+                                <i class="fas fa-forward"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -187,18 +218,42 @@
                 <p class="title">Next Level</p>
                 <form class="box" id="next">
                     <div>
-                        <div style="float: left">
-                            <p class="title is-5">Bloodbath</p>
+                        <div>
+                            <div style="float: left">
+                                <p class="title is-5" style="float: left">Bloodbath (10565740)</p>
+                                <button class="button is-small has-text-info" type="button" style="float: right; margin-left: 20px">Copy ID</button>
+                            </div>
+                            <div style="float: right">
+                                <button class="button reset" type="button">Blacklist Sender</button>
+                            </div>
+                            <div style="float: right">
+                                <button class="button reset" type="button">Blacklist Level</button>
+                            </div>
+                            <br></br>
                             <p><strong>By:</strong> Riot</p>
                             <p><strong>Requested by:</strong> GalaxyVinci05</p>
                             <p><strong>Notes:</strong> best lvl evr play rn</p>
-                        </div>
-                        <div class="input-container">
-                            <button class="button reset" type="button">Reset</button>
                         </div>
                     </div>
                 </form>
             </div>
         </section>
+
+        <script>
+            const url = "http://localhost:3000";
+            const userId = "<%= user.userId %>";
+
+            document.querySelector('#hide')?.addEventListener('click', async () => {
+                try {
+                    await fetch(`${url}/dashboard/${userId}/hide`, {
+                        method: "GET",
+                    });
+
+                    window.location.reload();
+                } catch (e) {
+                    console.error(e);
+                }
+            });
+        </script>
 <%- include('../components/footer') %>
 <%- include('components/sidebar') %>

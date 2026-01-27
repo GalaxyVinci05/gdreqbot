@@ -15,8 +15,8 @@ export = class PartCommand extends BaseCommand {
         });
     }
 
-    async run(client: Gdreqbot, msg: ChatMessage, channel: string): Promise<any> {
-        await client.say(channel, "Leaving the chat... Thanks for using gdreqbot!", { replyTo: msg }).catch(() => {});
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], opts: { auto: boolean }): Promise<any> {
+        await client.say(channel, "Leaving the chat... Thanks for using gdreqbot!", { replyTo: opts.auto ? null : msg });
 
         let channels: User[] = channelsdb.get("channels");
         let idx = channels.findIndex(c => c.userId == msg.channelId);

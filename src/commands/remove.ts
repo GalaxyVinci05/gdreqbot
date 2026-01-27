@@ -19,10 +19,10 @@ export = class RemoveCommand extends BaseCommand {
         });
     }
 
-    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], userPerms: PermLevels, privilegeMode: boolean): Promise<any> {
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], opts: { userPerms: PermLevels, privilegeMode: boolean }): Promise<any> {
         let levels: LevelData[] = client.db.load("levels", { channelId: msg.channelId }).levels;
         let query = "";
-        if (privilegeMode) {
+        if (opts.privilegeMode) {
             if (args[0])
                 query = args.join(" ");
             else query = levels[levels.length-1]?.id;

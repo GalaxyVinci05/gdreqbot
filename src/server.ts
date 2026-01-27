@@ -184,14 +184,14 @@ export = class {
                     .filter(cmd => cmd.config.permLevel < PermLevels.DEV)
                     .map(cmd => {
                         return {
-                            name: cmd.config.name,
-                            desc: cmd.config.description,
-                            args: cmd.config.args,
+                            name: cmd.info.name,
+                            desc: cmd.info.description,
+                            args: cmd.info.args,
                             aliases: cmd.config.aliases,
                             permLevel: this.normalize(PermLevels[cmd.config.permLevel]),
                             supportsPrivilege: cmd.config.supportsPrivilege,
-                            privilegeDesc: cmd.config.privilegeDesc,
-                            privilegeArgs: cmd.config.privilegeArgs
+                            privilegeDesc: cmd.info.privilegeDesc,
+                            privilegeArgs: cmd.info.privilegeArgs
                         };
                 })
             });
@@ -228,10 +228,10 @@ export = class {
             let userId = (req.user as User).userId;
             let userName = (req.user as User).userName;
 
-            await client.db.setDefault({ channelId: userId, channelName: userName });
-
             if (userId != req.params.user)
                 return res.status(403).send('Unauthorized');
+
+            await client.db.setDefault({ channelId: userId, channelName: userName });
 
             let levels: LevelData[] = client.db.load("levels", { channelId: userId }).levels;
             let sets: Settings = client.db.load("settings", { channelId: userId });
@@ -241,7 +241,8 @@ export = class {
                 user: req.user,
                 levels,
                 setData: this.getSettings(sets),
-                page: "req"
+                page: "req",
+                hide_note: sets.hide_note
             });
         });
 
@@ -249,10 +250,10 @@ export = class {
             let userId = (req.user as User).userId;
             let userName = (req.user as User).userName;
 
-            await client.db.setDefault({ channelId: userId, channelName: userName });
-
             if (userId != req.params.user)
                 return res.status(403).send('Unauthorized');
+
+            await client.db.setDefault({ channelId: userId, channelName: userName });
 
             let sets: Settings = client.db.load("settings", { channelId: userId });
             let perms: Perm[] = client.db.load("perms", { channelId: userId }).perms;
@@ -264,11 +265,11 @@ export = class {
             client.commands.forEach(cmd => {
                 if (cmd.config.permLevel == PermLevels.DEV) return;
 
-                let permData = perms.find(p => p.cmd == cmd.config.name);
+                let permData = perms.find(p => p.cmd == cmd.info.name);
 
                 let toPush = {
-                    name: cmd.config.name,
-                    desc: cmd.config.description,
+                    name: cmd.info.name,
+                    desc: cmd.info.description,
                     perm: this.normalize(PermLevels[permData?.perm ?? cmd.config.permLevel]),
                     defaultPerm: this.normalize(PermLevels[cmd.config.permLevel]),
                     isDefault: !Boolean(permData)
@@ -287,7 +288,8 @@ export = class {
                 cmdData,
                 perms: permLiterals.map(p => this.normalize(p)),
                 bl,
-                page: "set"
+                page: "set",
+                hide_note: sets.hide_note
             });
         });
 
@@ -461,6 +463,21 @@ export = class {
             res.status(200);
         });
 
+        server.get('/dashboard/:user/hide', this.checkAuth, multer().none(), async (req, res) => {
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
+
+            if (userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+            
+            await client.db.setDefault({ channelId: userId, channelName: userName });
+
+            let sets: Settings = client.db.load("settings", { channelId: userId });
+            if (!sets.hide_note) await client.db.save("settings", { channelId: userId }, { hide_note: true });
+
+            res.status(200).json({ success: true });
+        });
+
         server.get('/logout', (req, res, next) => {
             if (req.isAuthenticated())
                 req.logout(err => {
@@ -482,7 +499,7 @@ export = class {
 
             if (user) {
                 try {
-                    await client.commands.get('part').run(client, { channelId: userId } as any, userName);  // yes, I feel shame in doing this
+                    await client.commands.get('part').run(client, { channelId: userId } as any, userName, [], { auto: true });  // yes, I feel shame in doing this
                     res.redirect('/');
                 } catch (err) {
                     client.logger.error('', err);
@@ -552,12 +569,12 @@ export = class {
             let cmd = cmds.get(key);
             if (!cmd) continue;
 
-            let permData = perms.find(p => p.cmd == cmd.config.name);
+            let permData = perms.find(p => p.cmd == cmd.info.name);
             let permValue: any = PermLevels[(value as any).toUpperCase()];
 
             if (permValue != (permData?.perm ?? cmd.config.permLevel)) {
                 filtered.push({
-                    cmd: permValue == cmd.config.permLevel ? `${cmd.config.name}.d` : cmd.config.name,
+                    cmd: permValue == cmd.config.permLevel ? `${cmd.info.name}.d` : cmd.info.name,
                     perm: permValue
                 });
             }

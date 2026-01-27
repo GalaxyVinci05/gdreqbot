@@ -16,19 +16,19 @@ export = class ReqCommand extends BaseCommand {
         });
     }
 
-    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[]): Promise<any> {
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], opts: { auto: boolean }): Promise<any> {
         if (!args.length)
             return client.say(channel, "Kappa You need to specify a query.", { replyTo: msg });
 
         let res = await client.req.addLevel(client, msg.channelId, { userId: msg.userInfo.userId, userName: msg.userInfo.userName },
-            args[1] == "idreq" ? args[0] : args.join(" "),
-            args[1] == "idreq" ? args[2] : null
+            opts.auto ? args[0] : args.join(" "),
+            opts.auto ? args[1] : null
         );
         let sets: Settings = client.db.load("settings", { channelId: msg.channelId });
 
         switch (res.status) {
             case ResCode.NOT_FOUND: {
-                client.say(channel, `Kappa Couldn't find a level matching that ${args[1] == "idreq" ? "ID" : "query"} (is it unlisted?)`, { replyTo: msg });
+                client.say(channel, `Kappa Couldn't find a level matching that ${opts.auto ? "ID" : "query"} (is it unlisted?)`, { replyTo: msg });
                 break;
             }
 
@@ -68,7 +68,7 @@ export = class ReqCommand extends BaseCommand {
             case ResCode.OK: {
                 client.say(channel, `PogChamp Added '${res.level.name}' (${res.level.id}) by ${res.level.creator} to the queue at position ${client.db.load("levels", { channelId: msg.channelId }).levels.length}`, { replyTo: msg });
 
-                if (args[1] == "idreq") client.logger.log(`Added level in channel: ${channel}`);
+                if (opts.auto) client.logger.log(`Added level in channel: ${channel}`);
                 break;
             }
 

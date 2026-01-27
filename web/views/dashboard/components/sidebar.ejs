@@ -63,14 +63,11 @@
     </aside>
     <script>
         let collapsed = localStorage.getItem("sidebar-collapsed");
-        console.log(collapsed)
 
         if (collapsed == "true") {
             body.classList.add("sidebar-collapsed");
-            console.log("add")
         } else {
             body.classList.remove("sidebar-collapsed");
-            console.log("remove")
         }
 
         let toggle = document.querySelector(".sidebar-toggle");

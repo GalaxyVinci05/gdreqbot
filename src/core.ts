@@ -139,12 +139,12 @@ client.onMessage(async (channel, user, text, msg) => {
     let isId = text.match(/\b\d{5,9}\b/);
 
     if (!text.startsWith(sets.prefix ?? config.prefix) && isId && userPerms != PermLevels.BLACKLISTED) {
-        let reqPerm = perms?.find(p => p.cmd == client.commands.get("req").config.name);
+        let reqPerm = perms?.find(p => p.cmd == client.commands.get("req").info.name);
         if ((reqPerm?.perm || client.commands.get("req").config.permLevel) > userPerms) return;
 
         try {
             let notes = text.replace(isId[0], "").replaceAll(/\s+/g, " ");
-            await client.commands.get("req").run(client, msg, channel, [isId[0], "idreq", notes.length > 1 ? notes : null]);  // change args in the future cause stupid
+            await client.commands.get("req").run(client, msg, channel, [isId[0], notes.length > 1 ? notes : null], { auto: true });
         } catch (e) {
             client.say(channel, "An error occurred running command: req. If the issue persists, please contact the developer.", { replyTo: msg });
             console.error(e);
@@ -162,14 +162,14 @@ client.onMessage(async (channel, user, text, msg) => {
 
     if (!cmd || !cmd.config.enabled) return;
 
-    let customPerm = perms?.find(p => p.cmd == cmd.config.name);
+    let customPerm = perms?.find(p => p.cmd == cmd.info.name);
     if ((customPerm?.perm || cmd.config.permLevel) > userPerms) return;
 
     try {
-        client.logger.log(`Running command: ${cmd.config.name} in channel: ${channel}`);
-        await cmd.run(client, msg, channel, args, userPerms);
+        client.logger.log(`Running command: ${cmd.info.name} in channel: ${channel}`);
+        await cmd.run(client, msg, channel, args, { userPerms });
     } catch (e) {
-        client.say(channel, `An error occurred running command: ${cmd.config.name}. If the issue persists, please contact the developer.`, { replyTo: msg });
+        client.say(channel, `An error occurred running command: ${cmd.info.name}. If the issue persists, please contact the developer.`, { replyTo: msg });
         console.error(e);
     }
 });

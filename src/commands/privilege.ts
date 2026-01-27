@@ -15,7 +15,7 @@ export = class PrivilegeCommand extends BaseCommand {
         });
     }
 
-    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], userPerms: PermLevels): Promise<any> {
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], opts: { userPerms: PermLevels }): Promise<any> {
         if (!args.length)
             return client.say(channel, "Specify a command to run in privilege mode.", { replyTo: msg });
 
@@ -25,15 +25,15 @@ export = class PrivilegeCommand extends BaseCommand {
         let cmd = client.commands.get(cmdName)
             || client.commands.values().find(c => c.config.aliases?.includes(cmdName));
 
-        if (!cmd || !cmd.config.enabled || cmd.config.permLevel > userPerms) return;
+        if (!cmd || !cmd.config.enabled || cmd.config.permLevel > opts.userPerms) return;
         if (!cmd.config.supportsPrivilege)
             return client.say(channel, "This command doesn't support privilege mode.", { replyTo: msg });
 
         try {
-            client.logger.log(`Running command: ${cmd.config.name} in channel: ${channel} in privilege mode`);
-            await cmd.run(client, msg, channel, newArgs, userPerms, true);
+            client.logger.log(`Running command: ${cmd.info.name} in channel: ${channel} in privilege mode`);
+            await cmd.run(client, msg, channel, newArgs, { userPerms: opts.userPerms, privilegeMode: true });
         } catch (e) {
-            client.say(channel, `An error occurred running command: ${cmd.config.name}. If the issue persists, please contact the developer.`, { replyTo: msg });
+            client.say(channel, `An error occurred running command: ${cmd.info.name}. If the issue persists, please contact the developer.`, { replyTo: msg });
             console.error(e);
         }
     }

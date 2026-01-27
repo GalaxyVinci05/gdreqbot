@@ -111,6 +111,8 @@
 <script>
     let { body } = document;
     let hidden = localStorage.getItem("navbar") == "hidden";
+    console.log(window.scrollY)
+    console.log(hidden)
 
     if (hidden) {
         body.classList.add("navbar-hidden");
@@ -118,9 +120,17 @@
         body.classList.remove("navbar-hidden");
     }
 
+    window.addEventListener('load', () => {
+        if (window.scrollY == 0) {
+            body.classList.remove("navbar-hidden");
+            localStorage.setItem("navbar", "visible");
+        }
+    });
+
     let step = false;
 
     window.addEventListener("scroll", () => {
+        console.log("scroll")
         if (!step) {
             window.requestAnimationFrame(() => {
                 let lastScroll = localStorage.getItem("lastScroll");
