@@ -35,11 +35,11 @@
                     </span>
                     <span class="title is-6"><strong>Requests</strong></span>
                 </a></li>
-                <li><a href="/dashboard/<%= user.userId %>/settings" class="<%= page == "set" ? "is-active" : "" %>">
+                <li><a href="/dashboard/<%= user.userId %>/configuration" class="<%= page == "set" ? "is-active" : "" %>">
                     <span class="icon">
                         <i class="fas fa-arrow-right"></i>
                     </span>
-                    <span class="title is-6"><strong>Settings</strong></span>
+                    <span class="title is-6"><strong>Configuration</strong></span>
                 </a></li>
             </ul>
         </div>
@@ -73,8 +73,9 @@
         let toggle = document.querySelector(".sidebar-toggle");
         //let { body } = document;
 
-        toggle?.addEventListener('click', () => {
-            console.log("evt")
+        toggle?.addEventListener('click', evt => {
+            evt.preventDefault();
+
             body.classList.toggle('sidebar-collapsed');
             localStorage.setItem("sidebar-collapsed", body.classList.contains("sidebar-collapsed") ? "true" : "false");
         });

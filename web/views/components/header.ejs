@@ -112,8 +112,6 @@
 <script>
     let { body } = document;
     let hidden = localStorage.getItem("navbar") == "hidden";
-    console.log(window.scrollY)
-    console.log(hidden)
 
     if (hidden) {
         body.classList.add("navbar-hidden");
@@ -131,7 +129,6 @@
     let step = false;
 
     window.addEventListener("scroll", () => {
-        console.log("scroll")
         if (!step) {
             window.requestAnimationFrame(() => {
                 let lastScroll = localStorage.getItem("lastScroll");

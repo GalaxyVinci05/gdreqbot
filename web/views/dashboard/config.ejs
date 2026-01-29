@@ -270,7 +270,7 @@
             </div>
         </section>
         <script>
-            const url = "http://localhost:3000";
+            const url = "<%= url %>";
             const userId = "<%= user.userId %>";
 
             let changes = false;
@@ -280,7 +280,7 @@
                 let formData = new FormData(form);
 
                 try {
-                    let res = await fetch(`${url}/dashboard/${userId}/settings`, {
+                    let res = await fetch(`${url}/dashboard/${userId}/configuration`, {
                         method: "POST",
                         body: formData
                     });
@@ -433,7 +433,7 @@
                 button.disabled = true;
 
                 try {
-                    let res = await fetch(`${url}/dashboard/${userId}/settings`, {
+                    let res = await fetch(`${url}/dashboard/${userId}/configuration`, {
                         method: "POST",
                         body: formData
                     });
@@ -460,7 +460,7 @@
                 button.disabled = true;
 
                 try {
-                    let res = await fetch(`${url}/dashboard/${userId}/settings`, {
+                    let res = await fetch(`${url}/dashboard/${userId}/configuration`, {
                         method: "POST",
                         body: formData
                     });
@@ -489,7 +489,7 @@
                     formData.append("id", button.dataset.id);
 
                     try {
-                        await fetch(`${url}/dashboard/${userId}/settings`, {
+                        await fetch(`${url}/dashboard/${userId}/configuration`, {
                             method: "POST",
                             body: formData
                         });
@@ -509,7 +509,7 @@
                     formData.append("action", "clear");
 
                     try {
-                        await fetch(`${url}/dashboard/${userId}/settings`, {
+                        await fetch(`${url}/dashboard/${userId}/configuration`, {
                             method: "POST",
                             body: formData
                         });
@@ -552,7 +552,6 @@
 
             document.querySelector('#hide')?.addEventListener('click', async () => {
                 try {
-                    console.log("shish")
                     await fetch(`${url}/dashboard/${userId}/hide`, {
                         method: "GET",
                     });

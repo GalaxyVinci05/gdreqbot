@@ -12,7 +12,7 @@ import multer from "multer";
 import moment from "moment";
 import "moment-duration-format";
 import fs from "fs";
-import Gdreqbot, { channelsdb } from './core';
+import Gdreqbot, { channelsdb, updatedb } from './core';
 import { User } from "./structs/user";
 import { Settings } from "./datasets/settings";
 import { Perm } from "./datasets/perms";
@@ -66,14 +66,18 @@ export = class {
                 }
 
                 let channels: User[] = channelsdb.get("channels");
+                let updateUsers: User[] = updatedb.get("updateUsers");
                 let channel: User = channels.find(c => c.userId == channelId);
+                let update: User = updateUsers.find(u => u.userId == channelId);
 
                 await client.join(channelName);
 
-                if (!channel) {
+                if (!channel || !update) {
                     // push to channels db
                     channels.push({ userId: channelId, userName: channelName });
+                    updateUsers.push({ userId: channelId, userName: channelName });
                     await channelsdb.set("channels", channels);
+                    await updatedb.set("updateUsers", updateUsers);
                     await client.db.setDefault({ channelId, channelName });
 
                     await client.say(channelName, "Thanks for adding gdreqbot! You can get a list of commands by typing !help");
@@ -190,6 +194,7 @@ export = class {
                             aliases: cmd.config.aliases,
                             permLevel: this.normalize(PermLevels[cmd.config.permLevel]),
                             supportsPrivilege: cmd.config.supportsPrivilege,
+                            supportsSilent: cmd.config.supportsSilent,
                             privilegeDesc: cmd.info.privilegeDesc,
                             privilegeArgs: cmd.info.privilegeArgs
                         };
@@ -235,18 +240,76 @@ export = class {
 
             let levels: LevelData[] = client.db.load("levels", { channelId: userId }).levels;
             let sets: Settings = client.db.load("settings", { channelId: userId });
+            let bl: Blacklist = client.db.load("blacklist", { channelId: userId });
 
             res.render('dashboard/requests', {
                 isAuthenticated: true,
                 user: req.user,
                 levels,
                 sets,
+                bl,
                 page: "req",
-                hide_note: sets.hide_note
+                hide_note: sets.hide_note,
+                url: process.env.URL
             });
         });
 
-        server.get('/dashboard/:user/settings', this.checkAuth, async (req, res) => {
+        server.post('/dashboard/:user/requests', this.checkAuth, multer().none(), async (req, res) => {
+            let userId = (req.user as User).userId;
+            let userName = (req.user as User).userName;
+
+            if (userId != req.params.user)
+                return res.status(403).send('Unauthorized');
+
+            let levels: LevelData[] = client.db.load("levels", { channelId: userId }).levels;
+            let sets: Settings = client.db.load("settings", { channelId: userId });
+            let bl: Blacklist = client.db.load("blacklist", { channelId: userId });
+
+            let args: string[] = [];
+            let cmd: BaseCommand;
+
+            if (req.body.formType.startsWith("toggle")) {
+                let type = req.body.formType.split("-")[1];
+                cmd = client.commands.get(type.replace("req", "toggle"));
+            } else if (req.body.formType.startsWith("blacklist")){
+                let type = req.body.formType.split("-")[1];
+
+                if (type == "user" && !bl.users.find(u => u.userId == levels[0].user.userId))
+                    bl.users.push(levels[0].user);
+                else if (type == "level" && !bl.levels.find(l => l.id == levels[0].id))
+                    bl.levels.push({
+                        name: levels[0].name,
+                        creator: levels[0].creator,
+                        id: levels[0].id,
+                        user: null,
+                        notes: null
+                    });
+
+                await client.db.save("blacklist", { channelId: userId }, bl);
+                return res.status(200).json({ success: true });
+            } else if (req.body.formType.startsWith("remove")) {
+                if (!levels.length) return res.status(200).json({ success: true });
+
+                let id = req.body.formType.split("-")[1];
+                cmd = client.commands.get("privilege");
+                args = ["remove", id];
+            } else {
+                if (!levels.length) return res.status(200).json({ success: true }); 
+                cmd = client.commands.get(req.body.formType);
+            }
+
+            try {
+                await cmd.run(client, { channelId: userId } as any, userName, args, { auto: true, silent: sets.silent_mode });
+                client.logger.log(`(auto) Running command: ${cmd.info.name} in channel: ${userName}`);
+            } catch (e) {
+                client.say(userName, `An error occurred running command: ${cmd.info.name}. If the issue persists, please contact the developer.`);
+                console.error(e);
+            }
+
+            res.status(200).json({ success: true });
+        });
+
+        server.get('/dashboard/:user/configuration', this.checkAuth, async (req, res) => {
             let userId = (req.user as User).userId;
             let userName = (req.user as User).userName;
 
@@ -281,7 +344,7 @@ export = class {
             let permLiterals = Object.keys(PermLevels).filter(k => isNaN(Number(k)));
             permLiterals.pop();
 
-            res.render('dashboard/settings', {
+            res.render('dashboard/config', {
                 isAuthenticated: true,
                 user: req.user,
                 setData,
@@ -289,11 +352,12 @@ export = class {
                 perms: permLiterals.map(p => this.normalize(p)),
                 bl,
                 page: "set",
-                hide_note: sets.hide_note
+                hide_note: sets.hide_note,
+                url: process.env.URL
             });
         });
 
-        server.post('/dashboard/:user/settings', this.checkAuth, multer().none(), async (req, res) => {
+        server.post('/dashboard/:user/configuration', this.checkAuth, multer().none(), async (req, res) => {
             let userId = (req.user as User).userId;
             let userName = (req.user as User).userName;
 

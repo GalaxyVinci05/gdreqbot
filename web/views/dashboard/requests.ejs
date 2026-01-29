@@ -7,19 +7,19 @@
                 width: 100%;
             }
 
-            .reset {
+            .blacklist {
                 margin-left: 10px;
                 color: #ff3860;
                 border: 1px solid #ff3860;
             }
 
-            .reset:hover:enabled {
+            .blacklist:hover:enabled {
                 background-color: #ff3860;
                 color: white;
                 border-color: #ff3860;
             }
 
-            .reset:hover:disabled {
+            .blacklist:hover:disabled {
                 color: #ff3860;
             }
 
@@ -109,10 +109,9 @@
                 color: #ff3860;
             }
             .panel {
-                float: left;
                 margin-left: 0px;
                 margin-right: 30px;
-                display: flex;
+                display: inline-flex;
                 align-items: center;
                 justify-content: center;
             }
@@ -128,10 +127,31 @@
                 max-width: none;
                 white-space: nowrap;
             }
+            .copy-msg {
+                margin-left: 10px;
+            }
+            .header-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .left {
+                display: flex;
+                gap: 15px;
+            }
+            .right {
+                display: flex;
+                gap: 10px;
+            }
+            .copy-wrapper {
+                display: inline-flex;
+                align-items: center;
+                margin-bottom: 15px;
+            }
         </style>
         <section class="section">
             <div class="container">
-                <h1 class="title">Level Requests (<strong class="has-text-primary">BETA</strong>)</h1>
+                <h1 class="title">Level Requests</h1>
                 <% if (!hide_note) { %>
                 <hr>
                 <div class="has-text-info">
@@ -143,7 +163,7 @@
                         <p>• If you have any chat restrictions applied (Followers-Only chat, Subscriber-Only chat, Slowmode and others), you must <strong style="color: #00AD03">MOD</strong> or <strong style="color: #E005B9">VIP</strong> gdreqbot</p>
                         <p style="margin-left: 10px">Type <code class="has-text-primary">/mod gdreqbot</code> or <code class="has-text-primary">/vip gdreqbot</code> in your Twitch chat to do so</p>
                         <br>
-                        <p>• If you later want to remove gdreqbot from your chat, use the <strong class="has-text-info"><%= setData.prefix.value %>part</strong> command, or the button at the bottom of this page.</p>
+                        <p>• If you later want to remove gdreqbot from your chat, use the <strong class="has-text-info"><%= sets.prefix ?? "!" %>part</strong> command, or the button at the bottom of the <a href="/dashboard/<%= user.userId %>/configuration"><strong class="has-text-info">Configuration</strong></a> page.</p>
                     </div>
                     <br>
                     <p style="margin-left: 10px">If you've read and understood, click the button below to hide this text forever (a very long time):</p>
@@ -153,130 +173,113 @@
                 <hr>
                 <div class="container">
                     <div class="box panel" style="cursor: default">
-                        <div>
-                            <p class="subtitle">
-                                <span class="icon has-text-info" style="margin-right: 5px">
-                                    <i class="fas fa-envelope"></i>
+                        <p class="subtitle">
+                            <span class="icon has-text-info" style="margin-right: 5px">
+                                <i class="fas fa-envelope"></i>
+                            </span>
+                            Requests: 
+                            <% if (sets.req_enabled) { %>
+                            <strong class="has-text-success" style="margin-right: 10px">ON</strong>
+                            <button class="icon-button toggle-on toggle req" style="float: right; margin-left: 20px">
+                                <span class="icon">
+                                    <i class="fas fa-toggle-on"></i>
                                 </span>
-                                Requests: 
-                                <% if (sets.req_enabled) { %>
-                                <strong class="has-text-success" style="margin-right: 10px">ON</strong>
-                                <button class="icon-button toggle-on toggle-requests" style="float: right; margin-left: 20px">
-                                    <span class="icon">
-                                        <i class="fas fa-toggle-on"></i>
-                                    </span>
-                                </button>
-                                <% } else { %>
-                                <strong class="has-text-danger">OFF</strong>
-                                <button class="icon-button toggle-off toggle-requests" style="float: right; margin-left: 20px">
-                                    <span class="icon">
-                                        <i class="fas fa-toggle-off"></i>
-                                    </span>
-                                </button>
-                                <% } %>
-                            </p>
-                        </div>
+                            </button>
+                            <% } else { %>
+                            <strong class="has-text-danger">OFF</strong>
+                            <button class="icon-button toggle-off toggle req" style="float: right; margin-left: 20px">
+                                <span class="icon">
+                                    <i class="fas fa-toggle-off"></i>
+                                </span>
+                            </button>
+                            <% } %>
+                        </p>
                     </div>
                     <% if (sets.random_queue) { %>
                     <div class="box panel has-tooltip-arrow" data-tooltip="Clicking Next will pick a random level from the queue" aria-label="Clicking Next will pick a random level from the queue" style="cursor: default">
-                        <div>
-                            <p class="subtitle">
-                                <span class="icon has-text-danger" style="margin-right: 5px">
-                                        <i class="fas fa-random"></i>
+                        <p class="subtitle">
+                            <span class="icon has-text-danger" style="margin-right: 5px">
+                                    <i class="fas fa-random"></i>
+                            </span>
+                            Random Queue: <strong class="has-text-success" style="margin-right: 10px">ON</strong>
+                            <button class="icon-button toggle-on toggle random" style="float: right; margin-left: 20px">
+                                <span class="icon">
+                                    <i class="fas fa-toggle-on"></i>
                                 </span>
-                                Random Queue: <strong class="has-text-success" style="margin-right: 10px">ON</strong>
-                                <button class="icon-button toggle-on toggle-requests" style="float: right; margin-left: 20px">
-                                    <span class="icon">
-                                        <i class="fas fa-toggle-on"></i>
-                                    </span>
-                                </button>
-                            </p>
-                        </div>
+                            </button>
+                        </p>
                     </div>
                     <% } else { %>
                     <div class="box panel has-tooltip-arrow" data-tooltip="The queue order is followed" aria-label="The queue order is followed" style="cursor: default">
-                        <div>
-                            <p class="subtitle">
-                                <span class="icon has-text-danger" style="margin-right: 5px">
-                                        <i class="fas fa-random"></i>
+                        <p class="subtitle">
+                            <span class="icon has-text-danger" style="margin-right: 5px">
+                                    <i class="fas fa-random"></i>
+                            </span>
+                            Random Queue: <strong class="has-text-danger">OFF</strong>
+                            <button class="icon-button toggle-off toggle random" style="float: right; margin-left: 20px">
+                                <span class="icon">
+                                    <i class="fas fa-toggle-off"></i>
                                 </span>
-                                Random Queue: <strong class="has-text-danger">OFF</strong>
-                                <button class="icon-button toggle-off toggle-requests" style="float: right; margin-left: 20px">
-                                    <span class="icon">
-                                        <i class="fas fa-toggle-off"></i>
-                                    </span>
-                                </button>
-                            </p>
-                        </div>
+                            </button>
+                        </p>
                     </div>
                     <% } %>
                     <% if (sets.silent_mode) { %>
                     <div class="box panel has-tooltip-arrow" data-tooltip="The bot will not send any messages in chat" aria-label="The bot will not send any messages in chat" style="cursor: default">
-                        <div>
-                            <p class="subtitle">
-                                <span class="icon" style="margin-right: 5px">
-                                        <i class="fas fa-volume-mute"></i>
+                        <p class="subtitle">
+                            <span class="icon" style="margin-right: 5px">
+                                    <i class="fas fa-volume-mute"></i>
+                            </span>
+                            Silent Mode: <strong class="has-text-success" style="margin-right: 10px">ON</strong>
+                            <button class="icon-button toggle-on toggle silent" style="float: right; margin-left: 20px">
+                                <span class="icon">
+                                    <i class="fas fa-toggle-on"></i>
                                 </span>
-                                Silent Mode: <strong class="has-text-success" style="margin-right: 10px">ON</strong>
-                                <button class="icon-button toggle-on toggle-requests" style="float: right; margin-left: 20px">
-                                    <span class="icon">
-                                        <i class="fas fa-toggle-on"></i>
-                                    </span>
-                                </button>
-                            </p>
-                        </div>
+                            </button>
+                        </p>
                     </div>
                     <% } else { %>
                     <div class="box panel has-tooltip-arrow" data-tooltip="The bot will send messages as usual" aria-label="The bot will send messages as usual" style="cursor: default">
-                        <div>
-                            <p class="subtitle">
-                                <span class="icon" style="margin-right: 5px">
-                                        <i class="fas fa-volume-mute"></i>
+                        <p class="subtitle">
+                            <span class="icon" style="margin-right: 5px">
+                                    <i class="fas fa-volume-mute"></i>
+                            </span>
+                            Silent Mode: <strong class="has-text-danger">OFF</strong>
+                            <button class="icon-button toggle-off toggle silent" style="float: right; margin-left: 20px">
+                                <span class="icon">
+                                    <i class="fas fa-toggle-off"></i>
                                 </span>
-                                Silent Mode: <strong class="has-text-danger">OFF</strong>
-                                <button class="icon-button toggle-off toggle-requests" style="float: right; margin-left: 20px">
-                                    <span class="icon">
-                                        <i class="fas fa-toggle-off"></i>
-                                    </span>
-                                </button>
-                            </p>
-                        </div>
+                            </button>
+                        </p>
                     </div>
                     <% } %>
                 </div>
             </div>
-        </section>
-        <br>
-
-        <section class="section">
+            <br>
             <div class="container">
-                <div class="button panel <% if (levels.length > 0) { %>has-tooltip-arrow<% } %>" <% if (levels.length > 0) { %>data-tooltip="Clear Queue"<% } %> aria-label="Clear Queue" <% if (!levels.length) { %>disabled<% } %>>
-                    <div>
-                        <button class="icon-button clear has-text-danger" style="margin-left: 5px; font-size: 24px; <% if (!levels.length) { %>cursor: not-allowed"<% } %>>
-                            <span class="icon">
-                                <i class="fas fa-broom"></i>
-                            </span>
-                        </button>
-                    </div>
-                </div>
-                <div class="button refresh panel has-tooltip-arrow" data-tooltip="Refresh" aria-label="Refresh" onclick="refresh()">
+                <button class="button clear panel <% if (levels.length > 0) { %>has-tooltip-arrow<% } %>" <% if (levels.length > 0) { %>data-tooltip="Clear Queue"<% } %> aria-label="Clear Queue" <% if (!levels.length) { %>disabled<% } %>>
+                    <p class="icon-button has-text-danger" style="margin-left: 5px; font-size: 24px; <% if (!levels.length) { %>cursor: not-allowed"<% } %>>
+                        <span class="icon">
+                            <i class="fas fa-broom"></i>
+                        </span>
+                    </p>
+                </button>
+                <button class="button refresh panel has-tooltip-arrow" data-tooltip="Refresh" aria-label="Refresh" onclick="refresh()">
                     <p class="icon-button has-text-primary" style="margin-left: 5px; font-size: 24px">
                         <span class="icon">
                             <i class="fas fa-sync-alt"></i>
                         </span>
                     </p>
-                </div>
-                <div class="button next panel <% if (levels.length > 0) { %>has-tooltip-arrow<% } %>" <% if (levels.length > 0) { %>data-tooltip="Next Level"<% } %> aria-label="Next Level" <% if (!levels.length) { %>disabled<% } %>>
+                </button>
+                <button class="button next panel <% if (levels.length > 0) { %>has-tooltip-arrow<% } %>" <% if (levels.length > 0) { %>data-tooltip="Next Level"<% } %> aria-label="Next Level" <% if (!levels.length) { %>disabled<% } %>>
                     <div class="icon-button has-text-link" style="margin-left: 5px; <% if (!levels.length) { %>cursor: not-allowed"<% } %>>
                         <span class="icon">
                             <i class="fas fa-forward"></i>
                         </span>
                     </div>
-                </div>
+                </button>
+                <hr>
             </div>
-        </section>
-
-        <section class="section">
             <div class="container">
                 <p class="title">
                     <% if (sets.random_queue) { %>
@@ -286,31 +289,32 @@
                     <% } %>
                     Next Level
                 </p>
-                <form class="box" id="next">
+                <div class="box">
                     <% if (levels.length) { %>
-                    <div>
-                        <div style="float: left">
-                            <p class="title is-5" style="float: left"><%= levels[0].name %> (<%= levels[0].id %>)</p>
-                            <button class="button is-small has-text-info" type="button" style="float: right; margin-left: 20px" onclick="copyToClipboard()">Copy ID</button>
+                    <div class="header-row">
+                        <div class="left">
+                            <p class="title is-5">
+                                <%= levels[0].name %> (<%= levels[0].id %>)
+                            </p>
+                            <div class="copy-wrapper">
+                                <button class="button copy is-small has-text-info" type="button" onclick="copyToClipboard()">Copy ID</button>
+                            </div>
                         </div>
-                        <div style="float: right">
-                            <button class="button reset" type="button">Blacklist Sender</button>
+                        <div class="right">
+                            <button class="button blacklist" type="button" data-type="level" <% if (bl.levels.find(l => l.id == levels[0].id)) { %>disabled<% } %>>Blacklist Level</button>
+                            <button class="button blacklist" type="button" data-type="user" <% if (bl.users.find(u => u.userId == levels[0].user.userId)) { %>disabled<% } %>>Blacklist Sender</button>
                         </div>
-                        <div style="float: right">
-                            <button class="button reset" type="button">Blacklist Level</button>
-                        </div>
-                        <br></br>
-                        <p><strong>By:</strong> <%= levels[0].creator %></p>
-                        <p><strong>Requested by:</strong> <%= levels[0].user.userName %></p>
-                        <p><strong>Notes:</strong> <%= levels[0].notes ?? "none" %></p>
                     </div>
+                    <p><strong>By:</strong> <%= levels[0].creator %></p>
+                    <p><strong>Requested by:</strong> <%= levels[0].user.userName %></p>
+                    <p><strong>Notes:</strong> <% if (levels[0].notes) { %><%= levels[0].notes %><% } else { %><i>none</i><% } %></p>
                     <% } %>
-                </form>
+                </div>
                 <br>
-                <p class="title">Queue (<%= levels.length-1 %> levels)</p>
+                <p class="title">Queue (<%= levels.length %> levels)</p>
                 <div class="box">
                     <ul>
-                        <% levels.slice(1).forEach((level, i) => { %>
+                        <% levels.forEach((level, i) => { %>
                         <li class="input-container">
                             <p><%= i+1 %>. <%= level.name %> (<%= level.id %>)</p>
                             <button class="button remove is-small" type="button" data-type="levels" data-id="<%= level.id %>">Remove</button>
@@ -323,8 +327,21 @@
         </section>
 
         <script>
-            const url = "http://localhost:3000";
+            const url = "<%= url %>";
             const userId = "<%= user.userId %>";
+
+            function copyMsg(copyButton) {
+                let msg = document.createElement('span');
+
+                msg.classList.add('has-text-success', 'copy-msg');
+                msg.innerText = 'Copied to clipboard!';
+
+                msg.style.float = 'right';
+                msg.style.marginLeft = '10px';
+
+                copyButton.insertAdjacentElement('afterend', msg);
+                setTimeout(() => msg.remove(), 2000);
+            }
 
             document.querySelector('#hide')?.addEventListener('click', async () => {
                 try {
@@ -339,14 +356,67 @@
             });
 
             function copyToClipboard() {
-                navigator.clipboard.writeText("<%= levels[0].id %>");
+                navigator.clipboard.writeText("<%= levels[0]?.id %>");
+
+                copyMsg(document.querySelector('.copy'));
             }
 
             function refresh() {
                 window.location.reload();
             }
 
-            document.querySelector('.next').addEventListener('click', () => console.log("shish"))
+            async function sendButtonData(type, data) {
+                let formData = new FormData();
+                formData.append('formType', type);
+
+                try {
+                    await fetch(`${url}/dashboard/${userId}/requests`, {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    window.location.reload();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            document.querySelector('.next').addEventListener('click', async evt => {
+                evt.preventDefault();
+                await sendButtonData("next");
+            });
+
+            document.querySelector('.clear').addEventListener('click', async evt => {
+                evt.preventDefault();
+                await sendButtonData("clear");
+            });
+
+            document.querySelectorAll('.toggle').forEach(toggle => {
+                let type = toggle.classList.item(toggle.classList.length-1);
+
+                toggle.addEventListener('click', async evt => {
+                    evt.preventDefault();
+                    await sendButtonData(`toggle-${type}`);
+                });
+            });
+
+            document.querySelectorAll('.blacklist').forEach(button => {
+                button.addEventListener('click', async evt => {
+                    evt.preventDefault();
+
+                    let type = button.dataset.type;
+                    await sendButtonData(`blacklist-${type}`);
+                });
+            });
+
+            document.querySelectorAll('.remove').forEach(button => {
+                button.addEventListener('click', async evt => {
+                    evt.preventDefault();
+
+                    let id = button.dataset.id;
+                    await sendButtonData(`remove-${id}`);
+                });
+            });
         </script>
 <%- include('../components/footer') %>
 <%- include('components/sidebar') %>

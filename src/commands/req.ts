@@ -12,13 +12,18 @@ export = class ReqCommand extends BaseCommand {
             category: "requests",
             args: "<query>",
             aliases: ["r", "request", "add", "join"],
-            enabled: true
+            enabled: true,
+            supportsSilent: true
         });
     }
 
-    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], opts: { auto: boolean }): Promise<any> {
-        if (!args.length)
-            return client.say(channel, "Kappa You need to specify a query.", { replyTo: msg });
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args: string[], opts: { auto: boolean, silent: boolean }): Promise<any> {
+        if (!args.length) {
+            if (!opts.silent)
+                return client.say(channel, "Kappa You need to specify a query.", { replyTo: msg });
+            else
+                return;
+        }
 
         let res = await client.req.addLevel(client, msg.channelId, { userId: msg.userInfo.userId, userName: msg.userInfo.userName },
             opts.auto ? args[0] : args.join(" "),
@@ -28,32 +33,32 @@ export = class ReqCommand extends BaseCommand {
 
         switch (res.status) {
             case ResCode.NOT_FOUND: {
-                client.say(channel, `Kappa Couldn't find a level matching that ${opts.auto ? "ID" : "query"} (is it unlisted?)`, { replyTo: msg });
+                if (!opts.silent) client.say(channel, `Kappa Couldn't find a level matching that ${opts.auto ? "ID" : "query"} (is it unlisted?)`, { replyTo: msg });
                 break;
             }
 
             case ResCode.ALREADY_ADDED: {
-                client.say(channel, "Kappa That level is already in the queue.", { replyTo: msg });
+                if (!opts.silent) client.say(channel, "Kappa That level is already in the queue.", { replyTo: msg });
                 break;
             }
 
             case ResCode.MAX_PER_USER: {
-                client.say(channel, `Kappa You have the max amount of levels in the queue (${sets.max_levels_per_user})`, { replyTo: msg });
+                if (!opts.silent) client.say(channel, `Kappa You have the max amount of levels in the queue (${sets.max_levels_per_user})`, { replyTo: msg });
                 break;
             }
 
             case ResCode.FULL: {
-                client.say(channel, `Kappa The queue is full (max ${sets.max_queue_size} levels)`, { replyTo: msg });
+                if (!opts.silent) client.say(channel, `Kappa The queue is full (max ${sets.max_queue_size} levels)`, { replyTo: msg });
                 break;
             }
 
             case ResCode.DISABLED: {
-                client.say(channel, `Kappa Requests are disabled.${sets.first_time ? ` (use ${sets.prefix ?? client.config.prefix}toggle to enable them)` : ""}`, { replyTo: msg });
+                if (!opts.silent) client.say(channel, `Kappa Requests are disabled.${sets.first_time ? ` (enable in the dashboard, or use ${sets.prefix ?? client.config.prefix}toggle)` : ""}`, { replyTo: msg });
                 break;
             }
 
             case ResCode.BLACKLISTED: {
-                client.say(channel, "Kappa That level is blacklisted.", { replyTo: msg });
+                if (!opts.silent) client.say(channel, "Kappa That level is blacklisted.", { replyTo: msg });
                 break;
             }
 
@@ -66,7 +71,7 @@ export = class ReqCommand extends BaseCommand {
             }
 
             case ResCode.OK: {
-                client.say(channel, `PogChamp Added '${res.level.name}' (${res.level.id}) by ${res.level.creator} to the queue at position ${client.db.load("levels", { channelId: msg.channelId }).levels.length}`, { replyTo: msg });
+                if (!opts.silent) client.say(channel, `PogChamp Added '${res.level.name}' (${res.level.id}) by ${res.level.creator} to the queue at position ${client.db.load("levels", { channelId: msg.channelId }).levels.length}`, { replyTo: msg });
 
                 if (opts.auto) client.logger.log(`Added level in channel: ${channel}`);
                 break;

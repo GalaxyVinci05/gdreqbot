@@ -193,18 +193,20 @@ class Request {
         return { status: ResCode.OK, page: pages[page ? page-1 : 0], pages: pages.length };
     }
 
-    async toggle(client: Gdreqbot, channelId: string) {
+    async toggle(client: Gdreqbot, channelId: string, type: "queue" | "random" | "silent") {
         let sets: Settings = client.db.load("settings", { channelId });
-        await client.db.save("settings", { channelId }, { req_enabled: !sets.req_enabled });
-
-        return !sets.req_enabled;
-    }
-
-    async toggleRandom(client: Gdreqbot, channelId: string) {
-        let sets: Settings = client.db.load("settings", { channelId });
-        await client.db.save("settings", { channelId }, { random_queue: !sets.random_queue });
-
-        return !sets.random_queue;
+        
+        switch (type) {
+            case "queue":
+                await client.db.save("settings", { channelId }, { req_enabled: !sets.req_enabled });
+                return !sets.req_enabled;
+            case "random":
+                await client.db.save("settings", { channelId }, { random_queue: !sets.random_queue });
+                return !sets.random_queue;
+            case "silent":
+                await client.db.save("settings", { channelId }, { silent_mode: !sets.silent_mode });
+                return !sets.silent_mode;
+        }
     }
 
     async set(client: Gdreqbot, channelId: string, key: string, value: string) {

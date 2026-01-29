@@ -17,13 +17,14 @@ class BaseCommand {
         cooldown = 3,
         enabled = false,
         permLevel = PermLevels.USER,
-        supportsPrivilege = false
+        supportsPrivilege = false,
+        supportsSilent = false
     }) {
         this.info = { name, description, category, privilegeDesc, args, privilegeArgs };
-        this.config = { aliases, cooldown, enabled, permLevel, supportsPrivilege };
+        this.config = { aliases, cooldown, enabled, permLevel, supportsPrivilege, supportsSilent };
     }
 
-    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args?: string[], opts?: { userPerms?: PermLevels, privilegeMode?: boolean, auto?: boolean }) {}
+    async run(client: Gdreqbot, msg: ChatMessage, channel: string, args?: string[], opts?: { userPerms?: PermLevels, privilegeMode?: boolean, auto?: boolean, silent?: boolean }) {}
 }
 
 interface Info {
@@ -41,6 +42,7 @@ interface Config {
     enabled?: boolean;
     permLevel?: PermLevels;
     supportsPrivilege?: boolean;
+    supportsSilent?: boolean;
 }
 
 export default BaseCommand;
