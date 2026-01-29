@@ -28,6 +28,7 @@ export = class NextCommand extends BaseCommand {
                 await client.say(channel, `Hey! There is a requests dashboard now: ${process.env.URL}/dashboard || You can still use commands if you wish (this message won't appear anymore)`, { replyTo });
                 updateUsers.push({ userId: msg.channelId, userName: channel });
                 await updatedb.set("updateUsers", updateUsers);
+                client.logger.log(`Update note sent in channel: ${channel}`);
                 return;
             }
         }
