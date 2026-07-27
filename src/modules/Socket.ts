@@ -74,15 +74,10 @@ export default class {
                 if (this.client.currentChannels.includes(`#${ws.userName}`))
                     this.client.part(ws.userName);
 
-                //this.logger.debug(`-- sessions before close (${ws.userName}) --`);
-                //console.log(sessions);
                 let idx = sessionCache.findIndex(u => u.userId == ws.userId);
                 if (idx != -1) {
-                    //this.logger.debug(`found idx: ${idx}`);
                     sessionCache.splice(idx, 1);
                 }
-                //this.logger.debug(`-- sessions after close (${ws.userName}) --`);
-                //console.log(sessions);
             });
 
             ws.on('error', err => {
@@ -138,7 +133,7 @@ export default class {
                 return false;
             }
 
-            let [ platform, version ] = msg.version.split(":");
+            let [platform, version] = msg.version.split(":");
 
             if (version != config.clientVersion[platform as "win32" | "darwin" | "linux"]) {
                 this.sendFailure(ws, FailureCode.OUTDATED, platform);
@@ -167,12 +162,10 @@ export default class {
             try {
                 await this.client.join(ws.userName);
                 this.client.say(session.userName, "Thanks for using gdreqbot!");
-
-                //this.logger.debug(`-- sessions before auth (${ws.userName})`);
-                //console.log(sessions);
                 sessionCache.push({ userId: session.userId, userName: session.userName });
-                //this.logger.debug(`-- sessions after auth (${ws.userName})`);
-                //console.log(sessions);
+
+                // extend expiration date
+                await this.db.save("session", { userId: session.userId }, { expires: Date.now() + (1000*60*60*72) });
             } catch {
                 this.sendFailure(ws, FailureCode.JOIN);
                 return false;
